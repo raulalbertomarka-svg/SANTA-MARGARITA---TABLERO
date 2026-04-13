@@ -116,6 +116,10 @@ tbody tr:hover{background:var(--bg3);}
 .res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
 .rcard{background:var(--bg2);border:1px solid var(--brd);border-radius:10px;padding:18px;}
 .rcard-title{font-size:12px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.rcard-body{max-height:320px;overflow-y:auto;}
+.rcard-body::-webkit-scrollbar{width:4px;}
+.rcard-body::-webkit-scrollbar-track{background:transparent;}
+.rcard-body::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:4px;}
 .rrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;}
 .rrow:last-child{border-bottom:none;}
 .rrow-lbl{color:var(--tx2);flex:1;margin-right:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -208,20 +212,20 @@ tbody tr:hover{background:var(--bg3);}
     </div>
     <div class="res-grid">
       <div class="rcard">
-        <div class="rcard-title" style="color:var(--rd)">⚠️ Vencidos y críticos (≤7 días)</div>
-        <div id="res-criticos"><div class="load-st">Cargando...</div></div>
+        <div class="rcard-title" style="color:var(--rd)">⚠️ Vencidos y críticos (≤90 días)</div>
+        <div class="rcard-body" id="res-criticos"><div class="load-st">Cargando...</div></div>
       </div>
       <div class="rcard">
-        <div class="rcard-title" style="color:var(--or)">⏰ Próximos a vencer (8–30 días)</div>
-        <div id="res-proximos"><div class="load-st">Cargando...</div></div>
+        <div class="rcard-title" style="color:var(--or)">⏰ Próximos a vencer (todos)</div>
+        <div class="rcard-body" id="res-proximos"><div class="load-st">Cargando...</div></div>
       </div>
       <div class="rcard">
-        <div class="rcard-title" style="color:var(--vd)">🔧 Averiados recientes</div>
-        <div id="res-averiados"><div class="load-st">Cargando...</div></div>
+        <div class="rcard-title" style="color:var(--vd)">🔧 Averiados</div>
+        <div class="rcard-body" id="res-averiados"><div class="load-st">Cargando...</div></div>
       </div>
       <div class="rcard">
         <div class="rcard-title" style="color:var(--tl)">📉 Últimas mermas</div>
-        <div id="res-mermas"><div class="load-st">Cargando...</div></div>
+        <div class="rcard-body" id="res-mermas"><div class="load-st">Cargando...</div></div>
       </div>
     </div>
   </div>
@@ -264,9 +268,9 @@ tbody tr:hover{background:var(--bg3);}
         <table id="tbl-a">
           <thead><tr>
             <th>Fecha relevam.</th><th>Relevador</th><th>Punto de venta</th>
-            <th>Producto averiado</th><th>Motivo</th><th>Cantidad</th>
+            <th>Código de barras</th><th>Producto averiado</th><th>Motivo</th><th>Cantidad</th>
           </tr></thead>
-          <tbody><tr><td colspan="6" class="load-st">Cargando...</td></tr></tbody>
+          <tbody><tr><td colspan="7" class="load-st">Cargando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -462,19 +466,31 @@ function renderVencer() {
   document.getElementById('badge-a').textContent = filtA.length + ' items';
 
   const resC = document.getElementById('res-criticos');
-  const allCrit = filtV.filter(r => { const d=diasRest(r[5]); return d!==null&&d<=7; });
+  const allCrit = filtV.filter(r => { const d=diasRest(r[5]); return d!==null&&d<=90; })
+    .sort((a,b) => (diasRest(a[5])||999) - (diasRest(b[5])||999));
   resC.innerHTML = allCrit.length
-    ? allCrit.slice(0,6).map(r => `<div class="rrow"><span class="rrow-lbl" title="${r[4]||''}">${r[4]||'—'}</span>${pillDias(diasRest(r[5]))}</div>`).join('')
-    : '<div class="empty-st">Sin vencimientos críticos</div>';
+    ? allCrit.map(r => {
+        const prod = r[4]||''; const m = prod.match(/^(\d{6,})\s*[-–]?\s*(.*)/); const desc = m?m[2]:prod;
+        return `<div class="rrow"><span class="rrow-lbl" title="${desc}">${desc||'—'}</span>${pillDias(diasRest(r[5]))}</div>`;
+      }).join('')
+    : '<div class="empty-st">Sin vencimientos en los próximos 90 días</div>';
 
   const resP = document.getElementById('res-proximos');
-  resP.innerHTML = proximos.length
-    ? proximos.slice(0,6).map(r => `<div class="rrow"><span class="rrow-lbl" title="${r[4]||''}">${r[4]||'—'}</span>${pillDias(diasRest(r[5]))}</div>`).join('')
-    : '<div class="empty-st">Sin próximos</div>';
+  const todosVencer = filtV.filter(r => { const d=diasRest(r[5]); return d!==null; })
+    .sort((a,b) => (diasRest(a[5])||999) - (diasRest(b[5])||999));
+  resP.innerHTML = todosVencer.length
+    ? todosVencer.map(r => {
+        const prod = r[4]||''; const m = prod.match(/^(\d{6,})\s*[-–]?\s*(.*)/); const desc = m?m[2]:prod;
+        return `<div class="rrow"><span class="rrow-lbl" title="${desc}">${desc||'—'}</span>${pillDias(diasRest(r[5]))}</div>`;
+      }).join('')
+    : '<div class="empty-st">Sin próximos vencimientos</div>';
 
   const resA = document.getElementById('res-averiados');
   resA.innerHTML = filtA.length
-    ? filtA.slice(0,6).map(r => `<div class="rrow"><span class="rrow-lbl" title="${r[8]||''}">${r[8]||'—'}</span><span style="font-size:11px;color:var(--tx3)">${r[9]||''}</span></div>`).join('')
+    ? filtA.map(r => {
+        const prod = r[8]||''; const m = prod.match(/^(\d{6,})\s*[-–]?\s*(.*)/); const desc = m?m[2]:prod;
+        return `<div class="rrow"><span class="rrow-lbl" title="${desc}">${desc||'—'}</span><span style="font-size:11px;color:var(--tx3)">${r[9]||''}</span></div>`;
+      }).join('')
     : '<div class="empty-st">Sin averiados</div>';
 
   const tbV = document.querySelector('#tbl-v tbody');
@@ -499,15 +515,30 @@ function renderVencer() {
 
   const tbA = document.querySelector('#tbl-a tbody');
   tbA.innerHTML = filtA.length
-    ? filtA.map(r => `<tr>
-        <td style="font-family:var(--mono);font-size:11px">${r[0]||'—'}</td>
-        <td>${r[1]||'—'}</td>
-        <td>${r[2]||'—'}</td>
-        <td>${r[8]||'—'}</td>
-        <td>${r[9]||'—'}</td>
-        <td style="font-family:var(--mono)">${r[10]||'—'}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="6" class="empty-st">Sin registros de averiados</td></tr>';
+    ? filtA.map(r => {
+        const prod = r[8]||''; const m = prod.match(/^(\d{6,})\s*[-–]?\s*(.*)/);
+        const cod = m?m[1]:'—'; const desc = m?(m[2]||prod):prod;
+        return `<tr>
+          <td style="font-family:var(--mono);font-size:11px">${r[0]||'—'}</td>
+          <td>${r[1]||'—'}</td>
+          <td>${r[2]||'—'}</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--tx2)">${cod}</td>
+          <td>${desc||'—'}</td>
+          <td>${r[9]||'—'}</td>
+          <td style="font-family:var(--mono)">${r[10]||'—'}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="7" class="empty-st">Sin registros de averiados</td></tr>';
+}
+
+function parseTimestamp(s) {
+  if (!s) return null;
+  s = s.trim();
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (!m) return null;
+  let [,d,mo,y] = m.map(Number);
+  if (y < 100) y += 2000;
+  return new Date(y, mo-1, d);
 }
 
 function renderMerma() {
@@ -523,9 +554,10 @@ function renderMerma() {
     return true;
   });
 
+  const desde = getDesde(), hasta = getHasta();
   const filtM = rows.filter(r => {
-    const ts = parseDate(r[0]);
-    const desde = getDesde(), hasta = getHasta();
+    if (!desde && !hasta) return true;
+    const ts = parseTimestamp(r[0]);
     if (desde && ts && ts < desde) return false;
     if (hasta && ts && ts > hasta) return false;
     return true;
@@ -537,7 +569,7 @@ function renderMerma() {
 
   const resM = document.getElementById('res-mermas');
   resM.innerHTML = filtM.length
-    ? filtM.slice(-6).reverse().map(r => `<div class="rrow"><span class="rrow-lbl">${r[1]||r[0]||'—'}</span><span style="font-family:var(--mono);font-size:11px;color:var(--tx2)">${r[2]||''}</span></div>`).join('')
+    ? filtM.slice(-20).reverse().map(r => `<div class="rrow"><span class="rrow-lbl">${r[1]||r[0]||'—'}</span><span style="font-family:var(--mono);font-size:11px;color:var(--tx2)">${r[2]||''}</span></div>`).join('')
     : '<div class="empty-st">Sin mermas</div>';
 
   document.getElementById('thead-m').innerHTML =
@@ -581,8 +613,6 @@ async function loadAll() {
 }
 
 (function initFechas() {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  document.getElementById('fecha-hasta').value = toInputDate(hoy);
   document.getElementById('fecha-desde').addEventListener('change', renderAll);
   document.getElementById('fecha-hasta').addEventListener('change', renderAll);
 })();
