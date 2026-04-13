@@ -141,7 +141,55 @@ tbody tr:hover{background:var(--bg3);}
 .load-st{text-align:center;padding:20px;color:var(--tx2);font-size:12px;}
 .err-st{text-align:center;padding:20px;color:var(--rd);font-size:12px;}
 
-@media(max-width:600px){
+.ctrl-btn{background:var(--bg3);border:1px solid var(--brd2);color:var(--tx2);padding:5px 13px;border-radius:7px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.ctrl-btn:hover{background:var(--bg4);color:var(--tx);}
+.ctrl-btn.danger{border-color:var(--rd-br);color:var(--rd);}
+.ctrl-btn.danger:hover{background:var(--rd-bg);}
+.ctrl-btn.export{background:var(--vd);border-color:var(--vd);color:#fff;}
+.ctrl-btn.export:hover{background:var(--vm);}
+
+/* ── PDF REPORT (oculto, se imprime) ── */
+#pdf-report{display:none;}
+@media print{
+  body>*{display:none!important;}
+  #pdf-report{display:block!important;}
+  @page{size:A4 landscape;margin:0;}
+}
+.pdf-page{width:297mm;min-height:210mm;background:#1a2030;color:#fff;font-family:'Inter',sans-serif;padding:0;page-break-after:always;position:relative;overflow:hidden;}
+.pdf-page:last-child{page-break-after:avoid;}
+.pdf-header{padding:28px 36px 16px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.pdf-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.pdf-title{font-size:22px;font-weight:800;letter-spacing:0.04em;color:#fff;text-transform:uppercase;}
+.pdf-sub{font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:0.06em;}
+.pdf-badge{font-size:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);padding:3px 10px;border-radius:20px;}
+.pdf-body{padding:20px 36px;}
+.pdf-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
+.pdf-kpi{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 14px;border-top:3px solid;}
+.pdf-kpi.rd{border-top-color:#e74c3c;}
+.pdf-kpi.or{border-top-color:#e67e22;}
+.pdf-kpi.am{border-top-color:#f39c12;}
+.pdf-kpi.gr{border-top-color:#27ae60;}
+.pdf-kpi.tl{border-top-color:#16a085;}
+.pdf-kpi.pu{border-top-color:#8e44ad;}
+.pdf-kpi-val{font-size:28px;font-weight:700;font-family:var(--mono,monospace);}
+.pdf-kpi-val.rd{color:#e74c3c;}.pdf-kpi-val.or{color:#e67e22;}.pdf-kpi-val.am{color:#f39c12;}
+.pdf-kpi-val.gr{color:#27ae60;}.pdf-kpi-val.tl{color:#16a085;}.pdf-kpi-val.pu{color:#8e44ad;}
+.pdf-kpi-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;}
+.pdf-section-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.pdf-section-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.1);}
+.pdf-table{width:100%;border-collapse:collapse;font-size:11px;}
+.pdf-table th{text-align:left;padding:6px 10px;font-size:9px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);}
+.pdf-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);}
+.pdf-table tr:last-child td{border-bottom:none;}
+.pdf-pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:700;}
+.pdf-pill.vencido{background:#4a1f7a;color:#c4b5fd;}
+.pdf-pill.critico{background:#5a1a1a;color:#f87171;}
+.pdf-pill.urgente{background:#4a2800;color:#fb923c;}
+.pdf-pill.pronto{background:#4a3200;color:#fbbf24;}
+.pdf-pill.ok{background:#1a3a1a;color:#86efac;}
+.pdf-footer{position:absolute;bottom:12px;left:36px;right:36px;display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:.05em;}
+.pdf-accentbar{position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#6ab04c,#2d6a2d);}
+
   .topbar,.controls,.main{padding-left:14px;padding-right:14px;}
   .tabs{padding:0 14px;}
   .total-chip{margin-left:0;}
@@ -190,6 +238,9 @@ tbody tr:hover{background:var(--bg3);}
     <span class="clbl">Hasta</span>
     <input type="date" class="date-inp" id="fecha-hasta">
   </div>
+  <button class="ctrl-btn" onclick="todoPeriodo()">Todo el período</button>
+  <button class="ctrl-btn danger" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+  <button class="ctrl-btn export" onclick="exportarPDF()">⬇ Exportar PDF</button>
   <div class="total-chip">
     <div class="num" id="total-num">—</div>
     <div class="lbl">registros totales</div>
@@ -311,6 +362,9 @@ tbody tr:hover{background:var(--bg3);}
   </div>
 
 </div>
+
+<!-- ── REPORTE PDF (oculto, solo aparece al imprimir) ── -->
+<div id="pdf-report"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -568,6 +622,134 @@ async function loadAll(){
 
 document.getElementById('fecha-desde').addEventListener('change',renderAll);
 document.getElementById('fecha-hasta').addEventListener('change',renderAll);
+
+function todoPeriodo(){
+  document.getElementById('fecha-desde').value='';
+  document.getElementById('fecha-hasta').value='';
+  renderAll();
+}
+
+function limpiarFiltros(){
+  todoPeriodo();
+}
+
+function pillPDF(dias){
+  if(dias===null)return'—';
+  if(dias<0)return`<span class="pdf-pill vencido">${Math.abs(dias)}d venc.</span>`;
+  if(dias===0)return`<span class="pdf-pill critico">HOY</span>`;
+  if(dias<=7)return`<span class="pdf-pill critico">${dias}</span>`;
+  if(dias<=30)return`<span class="pdf-pill urgente">${dias}</span>`;
+  if(dias<=90)return`<span class="pdf-pill pronto">${dias}</span>`;
+  return`<span class="pdf-pill ok">${dias}</span>`;
+}
+
+function exportarPDF(){
+  const ahora=new Date();
+  const fechaStr=`${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${ahora.getFullYear()}`;
+  const desdeVal=document.getElementById('fecha-desde').value;
+  const hastaVal=document.getElementById('fecha-hasta').value;
+  const periodoStr=desdeVal||hastaVal
+    ?`${desdeVal||'inicio'} — ${hastaVal||'hoy'}`
+    :'Todo el período';
+
+  const rows=RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
+  const allV=rows.filter(r=>siMatch(r[3]));
+  const allA=rows.filter(r=>siMatch(r[7]));
+  const filtV=allV.filter(r=>inRangoFecha(r[5]));
+  const filtA=allA.filter(r=>inRangoFecha(r[0]));
+  const filtM=RAW_MERMA.filter(r=>inRangoFecha(r[0]));
+  const sorted=[...filtV].sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999));
+
+  const venc=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d<0;});
+  const d0_7=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>=0&&d<=7;});
+  const d8_30=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>7&&d<=30;});
+  const d31_90=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>30&&d<=90;});
+
+  function headerPage(titulo,sub){
+    return`<div class="pdf-accentbar"></div>
+      <div class="pdf-header">
+        <div class="pdf-header-top">
+          <div>
+            <div class="pdf-title">${titulo}</div>
+            <div class="pdf-sub">Santa Margarita S.A. · Laboratorio y Herboristería · ${sub}</div>
+          </div>
+          <div class="pdf-badge">Corte: ${fechaStr} · ${periodoStr}</div>
+        </div>
+      </div>`;
+  }
+
+  function footer(pag){
+    return`<div class="pdf-footer"><span>SANTA MARGARITA S.A. · Reporte de Campo · ${fechaStr}</span><span>Pág. ${pag} · CONFIDENCIAL – USO INTERNO</span></div>`;
+  }
+
+  /* ── Página 1: KPIs + top vencimientos ── */
+  const topVenc=sorted.slice(0,15);
+  const pag1=`<div class="pdf-page">
+    ${headerPage('REPORTE EJECUTIVO DE CAMPO','Vencimientos · Averiados · Merma')}
+    <div class="pdf-body">
+      <div class="pdf-kpis">
+        <div class="pdf-kpi pu"><div class="pdf-kpi-val pu">${venc.length}</div><div class="pdf-kpi-lbl">Ya vencidos</div></div>
+        <div class="pdf-kpi rd"><div class="pdf-kpi-val rd">${d0_7.length}</div><div class="pdf-kpi-lbl">Críticos 1–7d</div></div>
+        <div class="pdf-kpi or"><div class="pdf-kpi-val or">${d8_30.length}</div><div class="pdf-kpi-lbl">Alertas 8–30d</div></div>
+        <div class="pdf-kpi am"><div class="pdf-kpi-val am">${d31_90.length}</div><div class="pdf-kpi-lbl">Rango 31–90d</div></div>
+        <div class="pdf-kpi tl"><div class="pdf-kpi-val tl">${filtA.length}</div><div class="pdf-kpi-lbl">Averiados</div></div>
+        <div class="pdf-kpi gr"><div class="pdf-kpi-val gr">${filtM.length}</div><div class="pdf-kpi-lbl">Merma</div></div>
+      </div>
+      <div class="pdf-section-title">Vencimientos — más urgentes (top 15)</div>
+      <table class="pdf-table">
+        <thead><tr><th>Fecha relev.</th><th>Punto de venta</th><th>Código</th><th>Producto</th><th>Vence</th><th>Cant.</th><th>Días</th></tr></thead>
+        <tbody>${topVenc.map(r=>{const{cod,desc}=splitProd(r[4]);return`<tr>
+          <td>${r[0].split(' ')[0]}</td>
+          <td>${r[2]||'—'}</td>
+          <td style="font-family:monospace;font-size:9px">${cod}</td>
+          <td>${desc}</td>
+          <td style="font-family:monospace">${r[5]||'—'}</td>
+          <td style="text-align:right">${r[6]||'—'}</td>
+          <td>${pillPDF(diasRest(r[5]))}</td>
+        </tr>`;}).join('')}</tbody>
+      </table>
+    </div>
+    ${footer(1)}
+  </div>`;
+
+  /* ── Página 2: Averiados + Merma ── */
+  const pag2=`<div class="pdf-page">
+    ${headerPage('AVERIADOS Y MERMA','Detalle de productos averiados y merma registrada')}
+    <div class="pdf-body">
+      <div class="pdf-section-title">Averiados (${filtA.length} registros)</div>
+      <table class="pdf-table" style="margin-bottom:18px">
+        <thead><tr><th>Fecha</th><th>Relevador</th><th>Punto de venta</th><th>Código</th><th>Producto averiado</th><th>Motivo</th><th>Cant.</th></tr></thead>
+        <tbody>${filtA.slice(0,10).map(r=>{const{cod,desc}=splitProd(r[8]);return`<tr>
+          <td>${r[0].split(' ')[0]}</td>
+          <td>${r[1]||'—'}</td>
+          <td>${r[2]||'—'}</td>
+          <td style="font-family:monospace;font-size:9px">${cod}</td>
+          <td>${desc}</td>
+          <td>${r[9]||'—'}</td>
+          <td style="text-align:right">${r[10]||'—'}</td>
+        </tr>`;}).join('')}${filtA.length>10?`<tr><td colspan="7" style="color:rgba(255,255,255,0.4);font-style:italic">... y ${filtA.length-10} registros más</td></tr>`:''}</tbody>
+      </table>
+      <div class="pdf-section-title">Merma (${filtM.length} registros)</div>
+      <table class="pdf-table">
+        <thead><tr><th>Fecha</th><th>Relevador</th><th>Punto de venta</th><th>Código</th><th>Producto</th><th>Vencimiento</th><th>Cant.</th><th>Observación</th></tr></thead>
+        <tbody>${filtM.slice(0,10).map(r=>{const{cod,desc}=splitProd(r[4]);return`<tr>
+          <td>${r[0]||'—'}</td>
+          <td>${r[1]||'—'}</td>
+          <td>${r[2]||'—'}</td>
+          <td style="font-family:monospace;font-size:9px">${cod}</td>
+          <td>${desc}</td>
+          <td style="font-family:monospace">${r[5]||'—'}</td>
+          <td style="text-align:right">${r[6]||'—'}</td>
+          <td>${r[8]||'—'}</td>
+        </tr>`;}).join('')}${filtM.length>10?`<tr><td colspan="8" style="color:rgba(255,255,255,0.4);font-style:italic">... y ${filtM.length-10} registros más</td></tr>`:''}</tbody>
+      </table>
+    </div>
+    ${footer(2)}
+  </div>`;
+
+  document.getElementById('pdf-report').innerHTML=pag1+pag2;
+  window.print();
+}
 
 loadAll();
 setInterval(loadAll,5*60*1000);
