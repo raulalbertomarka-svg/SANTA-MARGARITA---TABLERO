@@ -771,10 +771,7 @@ function exportarPDF(){
           <div class="pdf-title">Resumen Ejecutivo</div>
           <div class="pdf-sub">Santa Margarita S.A. · Período: ${periodoStr}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:10px;font-weight:700;color:${colorAlerta};background:rgba(255,255,255,0.06);border:1px solid ${colorAlerta};padding:4px 12px;border-radius:20px;">NIVEL ${nivelAlerta}</span>
-          <div class="pdf-badge">Corte: ${fechaStr}</div>
-        </div>
+        <div class="pdf-badge">Corte: ${fechaStr}</div>
       </div>
     </div>
     <div class="pdf-body">
@@ -967,13 +964,6 @@ function exportarPDF(){
             <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.5;">${r.texto}</div>
           </div>
         </div>`).join('')}
-      </div>
-      <div style="margin-top:20px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:14px 18px;">
-        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Nota metodológica</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.45);line-height:1.6;">
-          Este reporte fue generado automáticamente desde el Tablero de Campo de Santa Margarita S.A. con datos del sistema de relevamiento en campo.
-          Los días restantes son calculados a la fecha de generación del reporte (${fechaStr}). Para consultas sobre los datos, contactar al área de supervisión de campo.
-        </div>
       </div>
     </div>
     ${footer(5,5)}
