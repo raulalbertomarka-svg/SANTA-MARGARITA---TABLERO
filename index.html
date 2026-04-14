@@ -20,10 +20,11 @@
   --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
 }
 [data-theme="dark"]{
-  --bg:#111a11;--bg2:#182018;--bg3:#1e2a1e;--bg4:#253025;
-  --brd:rgba(106,176,76,.15);--brd2:rgba(106,176,76,.25);
-  --tx:#e0eedd;--tx2:#90b888;--tx3:#5a7856;
-  --vs:#1e2a1e;--vb:#3a5a3a;
+  --bg:#0f1218;--bg2:#161c26;--bg3:#1c2436;--bg4:#232d42;
+  --brd:rgba(99,130,180,.15);--brd2:rgba(99,130,180,.28);
+  --tx:#dde4f0;--tx2:#8a9bbf;--tx3:#566080;
+  --vd:#4a7fd4;--vm:#5a8fe0;--vc:#6aa0f0;
+  --vs:#151e30;--vb:#263550;
   --am-bg:#2a1f00;--rd-bg:#2a1010;--tl-bg:#0a1f18;--pu-bg:#1e1030;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -147,6 +148,8 @@ tbody tr:hover{background:var(--bg3);}
 .ctrl-btn.danger:hover{background:var(--rd-bg);}
 .ctrl-btn.export{background:var(--vd);border-color:var(--vd);color:#fff;}
 .ctrl-btn.export:hover{background:var(--vm);}
+.ctrl-btn.excel{background:#1d6f42;border-color:#1d6f42;color:#fff;}
+.ctrl-btn.excel:hover{background:#165c36;}
 
 /* ── PDF REPORT (oculto, se imprime) ── */
 #pdf-report{display:none;}
@@ -243,6 +246,7 @@ tbody tr:hover{background:var(--bg3);}
   <button class="ctrl-btn" onclick="todoPeriodo()">Todo el período</button>
   <button class="ctrl-btn danger" onclick="limpiarFiltros()">✕ Limpiar</button>
   <button class="ctrl-btn export" onclick="exportarPDF()">⬇ Exportar PDF</button>
+  <button class="ctrl-btn excel" onclick="exportarExcel()">⬇ Exportar Excel</button>
   <div class="total-chip">
     <div class="num" id="total-num">—</div>
     <div class="lbl">registros totales</div>
@@ -369,6 +373,7 @@ tbody tr:hover{background:var(--bg3);}
 <div id="pdf-report"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const SH_VENCER = '1-5bQ6-rkcu9QxjmzuPUC5cd6Ciqks5M7i3t5WMVeCN8';
 const SH_MERMA  = '1vTQXqkYEolkC0EDtH4tbUclplFZuPJZOH2gcwiH99MI';
@@ -1048,6 +1053,84 @@ function exportarPDF(){
 
   document.getElementById('pdf-report').innerHTML=pag1+pag2+pag3+pag4+pag5+pag6;
   window.print();
+}
+
+function exportarExcel(){
+  const XLSX = window.XLSX;
+  if(!XLSX){ alert('Cargando librería, intentá de nuevo en un segundo...'); return; }
+
+  const rows = RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
+  const allV  = rows.filter(r=>siMatch(r[3]));
+  const allA  = rows.filter(r=>siMatch(r[7]));
+  const filtV = allV.filter(r=>inRangoFecha(r[5]));
+  const filtA = allA.filter(r=>inRangoFecha(r[0]));
+  const filtM = RAW_MERMA.filter(r=>inRangoFecha(r[0]));
+
+  const sorted = [...filtV].sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999));
+
+  function semaforo(dias){
+    if(dias===null)     return '⬜ Sin fecha';
+    if(dias<0)          return '🟣 Vencido';
+    if(dias===0)        return '🔴 Vence hoy';
+    if(dias<=7)         return '🔴 Crítico (1–7d)';
+    if(dias<=30)        return '🟠 Alerta (8–30d)';
+    if(dias<=90)        return '🟡 Próximo (31–90d)';
+    return               '🟢 OK (+90d)';
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  /* ── HOJA 1: VENCIMIENTOS ── */
+  const datosV = [
+    ['Fecha relevamiento','Punto de venta','Código de barras','Producto','Fecha vencimiento','Cantidad','Días restantes','Semáforo']
+  ];
+  sorted.forEach(r=>{
+    const{cod,desc}=splitProd(r[4]);
+    const d=diasRest(r[5]);
+    datosV.push([
+      r[0].split(' ')[0], r[2]||'', cod, desc,
+      r[5]||'', Number(r[6])||0, d!==null?d:'', semaforo(d)
+    ]);
+  });
+  const wsV = XLSX.utils.aoa_to_sheet(datosV);
+  wsV['!cols']=[{wch:18},{wch:36},{wch:16},{wch:38},{wch:16},{wch:10},{wch:14},{wch:22}];
+  wsV['!freeze']={xSplit:0,ySplit:1};
+  XLSX.utils.book_append_sheet(wb, wsV, 'Vencimientos');
+
+  /* ── HOJA 2: AVERIADOS ── */
+  const datosA = [
+    ['Fecha relevamiento','Punto de venta','Código de barras','Producto averiado','Motivo de avería','Cantidad']
+  ];
+  filtA.forEach(r=>{
+    const{cod,desc}=splitProd(r[8]);
+    datosA.push([
+      r[0].split(' ')[0], r[2]||'', cod, desc, r[9]||'', Number(r[10])||0
+    ]);
+  });
+  const wsA = XLSX.utils.aoa_to_sheet(datosA);
+  wsA['!cols']=[{wch:18},{wch:36},{wch:16},{wch:38},{wch:22},{wch:10}];
+  wsA['!freeze']={xSplit:0,ySplit:1};
+  XLSX.utils.book_append_sheet(wb, wsA, 'Averiados');
+
+  /* ── HOJA 3: MERMA ── */
+  const datosM = [
+    ['Fecha relevamiento','Punto de venta','Código de barras','Producto','Fecha vencimiento','Cantidad','Observación']
+  ];
+  filtM.forEach(r=>{
+    const{cod,desc}=splitProd(r[4]);
+    datosM.push([
+      r[0]||'', r[2]||'', cod, desc, r[5]||'', Number(r[6])||0, r[8]||''
+    ]);
+  });
+  const wsM = XLSX.utils.aoa_to_sheet(datosM);
+  wsM['!cols']=[{wch:18},{wch:36},{wch:16},{wch:38},{wch:16},{wch:10},{wch:30}];
+  wsM['!freeze']={xSplit:0,ySplit:1};
+  XLSX.utils.book_append_sheet(wb, wsM, 'Merma');
+
+  /* nombre de archivo con fecha */
+  const hoy=new Date();
+  const fn=`SantaMargarita_${String(hoy.getDate()).padStart(2,'0')}${String(hoy.getMonth()+1).padStart(2,'0')}${hoy.getFullYear()}.xlsx`;
+  XLSX.writeFile(wb, fn);
 }
 
 loadAll();
