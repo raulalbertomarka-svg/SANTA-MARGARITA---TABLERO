@@ -291,7 +291,6 @@ tbody tr:hover{background:var(--bg3);}
   <div class="tab active" onclick="switchTab('resumen',this)">📊 Resumen</div>
   <div class="tab" onclick="switchTab('vencer',this)">⏰ Vencimientos <span class="tc" id="tc-v">—</span></div>
   <div class="tab" onclick="switchTab('averiados',this)">⚠️ Averiados <span class="tc" id="tc-a">—</span></div>
-  <div class="tab" onclick="switchTab('merma',this)">📉 Merma <span class="tc" id="tc-m">—</span></div>
 </div>
 
 <div class="main">
@@ -304,7 +303,6 @@ tbody tr:hover{background:var(--bg3);}
       <div class="kpi or"><div class="kpi-lbl">Alertas 8–30d</div><div class="kpi-val or" id="k-prox">—</div><div class="kpi-sub">atención</div></div>
       <div class="kpi am"><div class="kpi-lbl">Rango 31–90d</div><div class="kpi-val am" id="k-rango">—</div><div class="kpi-sub">monitorear</div></div>
       <div class="kpi vd"><div class="kpi-lbl">Averiados</div><div class="kpi-val vd" id="k-aver">—</div><div class="kpi-sub">registros</div></div>
-      <div class="kpi tl"><div class="kpi-lbl">Merma</div><div class="kpi-val tl" id="k-merma">—</div><div class="kpi-sub">registros</div></div>
     </div>
 
     <div class="charts-grid">
@@ -328,10 +326,6 @@ tbody tr:hover{background:var(--bg3);}
         <div class="bar-list" id="bar-prod"></div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">📉 Merma por punto de venta</div>
-        <div class="bar-list" id="bar-merma-pdv"></div>
-      </div>
     </div>
   </div>
 
@@ -381,25 +375,6 @@ tbody tr:hover{background:var(--bg3);}
     </div>
   </div>
 
-  <!-- ── MERMA ── -->
-  <div class="panel" id="panel-merma">
-    <div class="section">
-      <div class="shdr">
-        <div class="stitle">Merma <span class="sbadge tl" id="badge-m">—</span></div>
-        <input class="sinp" placeholder="Buscar..." oninput="filterTable('tbl-m',this.value)">
-      </div>
-      <div class="twrap">
-        <table id="tbl-m">
-          <thead><tr>
-            <th>Fecha</th><th>Relevador</th><th>Punto de venta</th>
-            <th>Código</th><th>Producto</th>
-            <th>Vencimiento</th><th>Cant.</th><th>Observación</th>
-          </tr></thead>
-          <tbody><tr><td colspan="8" class="load-st">Cargando...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 
 </div>
 
@@ -468,6 +443,23 @@ function pillDias(dias){
   return`<span class="pill ok"><span class="pd"></span>${dias}</span>`;
 }
 
+function getFechaVenc(r){
+  // Si tiene vencidos (col D=SI), fecha en col F (idx 5)
+  // Si tiene próximos a vencer (col H=SI), fecha en col J (idx 9)
+  if(siMatch(r[3])) return r[5]||'';
+  if(siMatch(r[7])) return r[9]||'';
+  return r[5]||'';
+}
+function getProductoVenc(r){
+  if(siMatch(r[3])) return r[4]||'';
+  if(siMatch(r[7])) return r[8]||'';
+  return r[4]||'';
+}
+function getCantVenc(r){
+  if(siMatch(r[3])) return r[6]||'';
+  if(siMatch(r[7])) return r[10]||'';
+  return r[6]||'';
+}
 function splitProd(raw){
   const s=(raw||'').trim();
   const m=s.match(/^(\d{7,})\s*-\s*(.+)$/);
@@ -538,32 +530,29 @@ function renderDonut(segments){
 
 function renderAll(){
   const rows=RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
-  const allV=rows.filter(r=>siMatch(r[3]));
-  const allA=rows.filter(r=>siMatch(r[7]));
+  const allV=rows.filter(r=>siMatch(r[3])||siMatch(r[7]));
+  const allA=rows.filter(r=>siMatch(r[11]));
 
-  const filtV=allV.filter(r=>inRangoFecha(r[5]));
+  const filtV=allV.filter(r=>inRangoFecha(getFechaVenc(r)));
   const filtA=allA.filter(r=>inRangoFecha(r[0]));
   const filtM=RAW_MERMA.filter(r=>inRangoFecha(r[0]));
 
-  const sorted=[...filtV].sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999));
+  const sorted=[...filtV].sort((a,b)=>(diasRest(getFechaVenc(a))??9999)-(diasRest(getFechaVenc(b))??9999));
 
-  const vencidos=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d<0;});
-  const d0_7=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>=0&&d<=7;});
-  const d8_30=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>7&&d<=30;});
-  const d31_90=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>30&&d<=90;});
+  const vencidos=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d<0;});
+  const d0_7=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>=0&&d<=7;});
+  const d8_30=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>7&&d<=30;});
+  const d31_90=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>30&&d<=90;});
 
   document.getElementById('k-vencidos').textContent=vencidos.length;
   document.getElementById('k-crit').textContent=d0_7.length;
   document.getElementById('k-prox').textContent=d8_30.length;
   document.getElementById('k-rango').textContent=d31_90.length;
   document.getElementById('k-aver').textContent=filtA.length;
-  document.getElementById('k-merma').textContent=filtM.length;
   document.getElementById('tc-v').textContent=filtV.length;
   document.getElementById('tc-a').textContent=filtA.length;
-  document.getElementById('tc-m').textContent=filtM.length;
   document.getElementById('badge-v').textContent=filtV.length+' items';
   document.getElementById('badge-a').textContent=filtA.length+' items';
-  document.getElementById('badge-m').textContent=filtM.length+' registros';
   document.getElementById('total-num').textContent=filtV.length+filtA.length+filtM.length;
 
   renderDonut([
@@ -571,12 +560,11 @@ function renderAll(){
     {lbl:'1–7 días',val:d0_7.length,color:'#c0392b'},
     {lbl:'8–30 días',val:d8_30.length,color:'#b85c00'},
     {lbl:'31–90 días',val:d31_90.length,color:'#d4850a'},
-    {lbl:'+90 días',val:sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>90;}).length,color:'#2d6a2d'},
+    {lbl:'+90 días',val:sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>90;}).length,color:'#2d6a2d'},
   ]);
 
   renderBarras('bar-pdv',topN(filtV,2),'#4a8c3f');
   renderBarras('bar-prod',topN(filtV.map(r=>{const{desc}=splitProd(r[4]);return{2:desc};}),2),'#b85c00');
-  renderBarras('bar-merma-pdv',topN(filtM,2),'#1a7a5e');
 
   /* TABLA VENCIMIENTOS */
   const tbV=document.querySelector('#tbl-v tbody');
@@ -592,7 +580,7 @@ function renderAll(){
         <td>${desc}</td>
         <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${r[5]||'—'}</td>
         <td style="font-family:var(--mono);text-align:right">${r[6]||'—'}</td>
-        <td>${pillDias(diasRest(r[5]))}</td>
+        <td>${pillDias(diasRest(getFechaVenc(r)))}</td>
       </tr>`;}).join('')
     :'<tr><td colspan="8" class="empty-st">Sin registros en este rango</td></tr>';
 
@@ -614,21 +602,6 @@ function renderAll(){
     :'<tr><td colspan="7" class="empty-st">Sin registros de averiados</td></tr>';
 
   /* TABLA MERMA — col H (idx 7) oculta (SI/NO observación) */
-  const tbM=document.querySelector('#tbl-m tbody');
-  tbM.innerHTML=filtM.length
-    ?filtM.map(r=>{
-      const{cod,desc}=splitProd(r[4]);
-      return`<tr>
-        <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${r[0]||'—'}</td>
-        <td>${r[1]||'—'}</td>
-        <td>${r[2]||'—'}</td>
-        <td style="font-family:var(--mono);font-size:12px;color:var(--tx2);white-space:nowrap">${cod}</td>
-        <td>${desc}</td>
-        <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${r[5]||'—'}</td>
-        <td style="font-family:var(--mono);text-align:right">${r[6]||'—'}</td>
-        <td>${r[8]||'—'}</td>
-      </tr>`;}).join('')
-    :'<tr><td colspan="8" class="empty-st">Sin registros en este rango</td></tr>';
 }
 
 async function loadAll(manual){
@@ -739,18 +712,18 @@ function exportarPDF(){
   const periodoStr=desdeF||hastaF?`${desdeF||'inicio'} al ${hastaF||'hoy'}`:'Todo el período registrado';
 
   const rows=RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
-  const allV=rows.filter(r=>siMatch(r[3]));
-  const allA=rows.filter(r=>siMatch(r[7]));
-  const filtV=allV.filter(r=>inRangoFecha(r[5]));
+  const allV=rows.filter(r=>siMatch(r[3])||siMatch(r[7]));
+  const allA=rows.filter(r=>siMatch(r[11]));
+  const filtV=allV.filter(r=>inRangoFecha(getFechaVenc(r)));
   const filtA=allA.filter(r=>inRangoFecha(r[0]));
   const filtM=RAW_MERMA.filter(r=>inRangoFecha(r[0]));
-  const sorted=[...filtV].sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999));
+  const sorted=[...filtV].sort((a,b)=>(diasRest(getFechaVenc(a))??9999)-(diasRest(getFechaVenc(b))??9999));
 
-  const venc=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d<0;});
-  const d0_7=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>=0&&d<=7;});
-  const d8_30=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>7&&d<=30;});
-  const d31_90=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>30&&d<=90;});
-  const dMas90=sorted.filter(r=>{const d=diasRest(r[5]);return d!==null&&d>90;});
+  const venc=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d<0;});
+  const d0_7=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>=0&&d<=7;});
+  const d8_30=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>7&&d<=30;});
+  const d31_90=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>30&&d<=90;});
+  const dMas90=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>90;});
 
   const accentBar=`<div class="pdf-accentbar"></div>`;
 
@@ -907,7 +880,7 @@ function exportarPDF(){
           <td>${desc}</td>
           <td style="font-family:monospace;white-space:nowrap">${r[5]||'—'}</td>
           <td style="text-align:right;white-space:nowrap">${r[6]||'—'}</td>
-          <td style="white-space:nowrap">${pillPDF(diasRest(r[5]))}</td>
+          <td style="white-space:nowrap">${pillPDF(diasRest(getFechaVenc(r)))}</td>
         </tr>`;}).join('')}${sorted.length>24?`<tr><td colspan="7" style="color:rgba(255,255,255,0.35);font-style:italic;padding:8px 10px;">... y ${sorted.length-24} registros más no mostrados</td></tr>`:''}</tbody>
       </table>
     </div>
@@ -930,13 +903,13 @@ function exportarPDF(){
       <div class="pdf-section-title">Averiados (${filtA.length} registros)</div>
       <table class="pdf-table" style="margin-bottom:16px;">
         <thead><tr><th>Fecha</th><th>Punto de venta</th><th>Código</th><th>Producto averiado</th><th>Motivo</th><th>Cant.</th></tr></thead>
-        <tbody>${filtA.slice(0,10).map(r=>{const{cod,desc}=splitProd(r[8]);return`<tr>
+        <tbody>${filtA.slice(0,10).map(r=>{const{cod,desc}=splitProd(r[12]);return`<tr>
           <td style="white-space:nowrap">${r[0].split(' ')[0]}</td>
           <td>${r[2]||'—'}</td>
           <td style="font-family:monospace;font-size:8px;white-space:nowrap">${cod}</td>
           <td>${desc}</td>
-          <td>${r[9]||'—'}</td>
-          <td style="text-align:right;white-space:nowrap">${r[10]||'—'}</td>
+          <td>${r[13]||'—'}</td>
+          <td style="text-align:right;white-space:nowrap">${r[14]||'—'}</td>
         </tr>`;}).join('')}${filtA.length>10?`<tr><td colspan="6" style="color:rgba(255,255,255,0.35);font-style:italic">... y ${filtA.length-10} más</td></tr>`:''}</tbody>
       </table>
       <div class="pdf-section-title">Merma (${filtM.length} registros)</div>
@@ -1124,8 +1097,8 @@ function exportarExcel(){
   if(!XLSX){ alert('Cargando librería, intentá de nuevo en un segundo...'); return; }
 
   const rows = RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
-  const allV  = rows.filter(r=>siMatch(r[3]));
-  const allA  = rows.filter(r=>siMatch(r[7]));
+  const allV  = rows.filter(r=>siMatch(r[3])||siMatch(r[7]));
+  const allA  = rows.filter(r=>siMatch(r[11]));
   const filtV = allV.filter(r=>inRangoFecha(r[5]));
   const filtA = allA.filter(r=>inRangoFecha(r[0]));
   const filtM = RAW_MERMA.filter(r=>inRangoFecha(r[0]));
@@ -1150,7 +1123,7 @@ function exportarExcel(){
   ];
   sorted.forEach(r=>{
     const{cod,desc}=splitProd(r[4]);
-    const d=diasRest(r[5]);
+    const d=diasRest(getFechaVenc(r));
     datosV.push([
       r[0].split(' ')[0], r[2]||'', cod, desc,
       r[5]||'', Number(r[6])||0, d!==null?d:'', semaforo(d)
@@ -1166,9 +1139,9 @@ function exportarExcel(){
     ['Fecha relevamiento','Punto de venta','Código de barras','Producto averiado','Motivo de avería','Cantidad']
   ];
   filtA.forEach(r=>{
-    const{cod,desc}=splitProd(r[8]);
+    const{cod,desc}=splitProd(r[12]);
     datosA.push([
-      r[0].split(' ')[0], r[2]||'', cod, desc, r[9]||'', Number(r[10])||0
+      r[0].split(' ')[0], r[2]||'', cod, desc, r[13]||'', Number(r[14])||0
     ]);
   });
   const wsA = XLSX.utils.aoa_to_sheet(datosA);
