@@ -589,7 +589,6 @@ function renderAll(){
     :'<tr><td colspan="8" class="empty-st">Sin registros en este rango</td></tr>';
 
   /* TABLA AVERIADOS */
-  const filtAconDatos=filtA.filter(r=>(r[12]||'').trim()!='');
   const tbA=document.querySelector('#tbl-a tbody');
   tbA.innerHTML=filtAconDatos.length
     ?filtA.map(r=>{
