@@ -945,41 +945,33 @@ function exportarPDF(){try{
   const FILAS_PAG=30;
   function paginaTabla(titulo,sub,badge,filas,fnFila,numPagBase){
     if(!filas.length) return '';
-    const paginas=[];
-    for(let i=0;i<filas.length;i+=FILAS_PAG){
-      const chunk=filas.slice(i,i+FILAS_PAG);
-      const esPrimera=i===0;
-      const numPag=numPagBase+paginas.length;
-      paginas.push(\`<div class="pdf-page">
-        \${accentBar}
-        <div class="pdf-header">
-          <div class="pdf-header-top">
-            <div>
-              <div class="pdf-title">\${titulo}\${!esPrimera?' (cont.)':''}</div>
-              <div class="pdf-sub">\${sub}</div>
-            </div>
-            <div class="pdf-badge">\${badge} · pág. \${numPag}</div>
-          </div>
-        </div>
-        <div class="pdf-body">
-          <table class="pdf-table">
-            <thead><tr><th>Fecha relev.</th><th>Punto de venta</th><th>Código</th><th>Producto</th><th>Vence</th><th>Cant.</th><th>Días</th></tr></thead>
-            <tbody>\${chunk.map(fnFila).join('')}</tbody>
-          </table>
-        </div>
-        <div class="pdf-footer">
-          <span>SANTA MARGARITA S.A. · Laboratorio y Herboristería · Reporte de Campo · \${fechaStr}</span>
-          <span>Pág. \${numPag}</span>
-        </div>
-      </div>\`);
+    var paginas=[];
+    for(var i=0;i<filas.length;i+=FILAS_PAG){
+      var chunk=filas.slice(i,i+FILAS_PAG);
+      var esPrimera=(i===0);
+      var numPag=numPagBase+paginas.length;
+      var thead='<thead><tr><th>Fecha relev.</th><th>Punto de venta</th><th>Codigo</th><th>Producto</th><th>Vence</th><th>Cant.</th><th>Dias</th></tr></thead>';
+      var html='<div class="pdf-page">'+accentBar+
+        '<div class="pdf-header"><div class="pdf-header-top">'+
+          '<div><div class="pdf-title">'+titulo+(esPrimera?'':' (cont.).')+'</div>'+
+          '<div class="pdf-sub">'+sub+'</div></div>'+
+          '<div class="pdf-badge">'+badge+'</div>'+
+        '</div></div>'+
+        '<div class="pdf-body"><table class="pdf-table">'+thead+
+          '<tbody>'+chunk.map(fnFila).join('')+'</tbody>'+
+        '</table></div>'+
+        '<div class="pdf-footer">'+
+          '<span>SANTA MARGARITA S.A. Laboratorio y Herboristeria Reporte de Campo '+fechaStr+'</span>'+
+          '<span>Pag. '+numPag+'</span>'+
+        '</div></div>';
+      paginas.push(html);
     }
     return paginas.join('');
   }
 
-  const paginasProximos=Math.ceil(sorted.length/FILAS_PAG)||1;
-  const paginasVencidos=Math.ceil(sortedVenc.length/FILAS_PAG);
-  const pag3=paginaTabla('Próximos a vencer',\`Ordenados por urgencia · \${periodoStr}\`,\`\${sorted.length} registros\`,sorted,filaProximo,3);
-  const pag3b=paginaTabla('Vencidos',\`Fecha de vencimiento superada · \${periodoStr}\`,\`\${sortedVenc.length} registros\`,sortedVenc,filaVencido,3+paginasProximos);
+  var paginasProximos=Math.ceil(sorted.length/FILAS_PAG)||1;
+  var pag3=paginaTabla('Proximos a vencer','Ordenados por urgencia '+periodoStr,sorted.length+' registros',sorted,filaProximo,3);
+  var pag3b=paginaTabla('Vencidos','Fecha de vencimiento superada '+periodoStr,sortedVenc.length+' registros',sortedVenc,filaVencido,3+paginasProximos);
 
   /* ─────────────────────────────────────────
      PÁG 4 — AVERIADOS + MERMA
