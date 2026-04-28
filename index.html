@@ -172,7 +172,7 @@ tbody tr:hover{background:var(--bg3);}
   #pdf-report{display:block!important;}
   @page{size:A4 landscape;margin:0;}
 }
-.pdf-page{width:297mm;min-height:210mm;background:#1a2030;color:#fff;font-family:'Inter',sans-serif;padding:0;page-break-after:always;position:relative;overflow:hidden;}
+.pdf-page{width:297mm;height:210mm;background:#1a2030;color:#fff;font-family:'Inter',sans-serif;padding:0;page-break-after:always;page-break-inside:avoid;position:relative;overflow:hidden;display:flex;flex-direction:column;}
 .pdf-page:last-child{page-break-after:avoid;}
 .pdf-header{padding:28px 36px 16px;border-bottom:1px solid rgba(255,255,255,0.1);}
 .pdf-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
@@ -204,7 +204,7 @@ tbody tr:hover{background:var(--bg3);}
 .pdf-pill.urgente{background:#4a2800;color:#fb923c;}
 .pdf-pill.pronto{background:#4a3200;color:#fbbf24;}
 .pdf-pill.ok{background:#1a3a1a;color:#86efac;}
-.pdf-footer{position:absolute;bottom:12px;left:36px;right:36px;display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:.05em;}
+.pdf-header{flex-shrink:0;}.pdf-body{flex:1;overflow:hidden;padding:14px 36px 0;}.pdf-footer{flex-shrink:0;padding:8px 36px;border-top:1px solid rgba(255,255,255,0.08);position:static;display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:.05em;}
 .pdf-accentbar{position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#6ab04c,#2d6a2d);}
 
   .topbar,.controls,.main{padding-left:14px;padding-right:14px;}
@@ -873,7 +873,7 @@ function exportarPDF(){try{
         <div class="pdf-badge">Corte: ${fechaStr}</div>
       </div>
     </div>
-    <div class="pdf-body">
+    <div class="pdf-body" style="padding:0">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
         <div>
           <div class="pdf-section-title">Distribución de vencimientos</div>
@@ -957,7 +957,7 @@ function exportarPDF(){try{
           '<div class="pdf-sub">'+sub+'</div></div>'+
           '<div class="pdf-badge">'+badge+'</div>'+
         '</div></div>'+
-        '<div class="pdf-body"><table class="pdf-table">'+thead+
+        '<div class="pdf-body" style="padding:0"><table class="pdf-table">'+thead+
           '<tbody>'+chunk.map(fnFila).join('')+'</tbody>'+
         '</table></div>'+
         '<div class="pdf-footer">'+
@@ -985,7 +985,7 @@ function exportarPDF(){try{
         <div class="pdf-badge">${filtA.length} averiados · ${filtM.length} mermas</div>
       </div>
     </div>
-    <div class="pdf-body">
+    <div class="pdf-body" style="padding:0">
       <div class="pdf-section-title">Averiados (${filtA.length} registros)</div>
       <table class="pdf-table" style="margin-bottom:16px;">
         <thead><tr><th>Fecha</th><th>Punto de venta</th><th>Código</th><th>Producto averiado</th><th>Motivo</th><th>Cant.</th></tr></thead>
@@ -1077,7 +1077,7 @@ function exportarPDF(){try{
         <div class="pdf-badge">Corte: ${fechaStr}</div>
       </div>
     </div>
-    <div class="pdf-body">
+    <div class="pdf-body" style="padding:0">
       <div style="display:flex;flex-direction:column;gap:12px;">
         ${recomendaciones.map((r,i)=>`
         <div style="background:${r.bg};border:1px solid ${r.bdr};border-radius:8px;padding:14px 18px;display:flex;gap:14px;align-items:flex-start;">
@@ -1133,7 +1133,7 @@ function exportarPDF(){try{
         <div class="pdf-badge">Corte: ${fechaStr}</div>
       </div>
     </div>
-    <div class="pdf-body">
+    <div class="pdf-body" style="padding:0">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
 
         <div>
