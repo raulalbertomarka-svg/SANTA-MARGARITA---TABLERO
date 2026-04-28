@@ -289,7 +289,8 @@ tbody tr:hover{background:var(--bg3);}
 
 <div class="tabs">
   <div class="tab active" onclick="switchTab('resumen',this)">📊 Resumen</div>
-  <div class="tab" onclick="switchTab('vencer',this)">⏰ Vencimientos <span class="tc" id="tc-v">—</span></div>
+  <div class="tab" onclick="switchTab('proximos',this)">⏰ Próximos a vencer <span class="tc" id="tc-p">—</span></div>
+  <div class="tab" onclick="switchTab('vencidos',this)">🔴 Vencidos <span class="tc" id="tc-v">—</span></div>
   <div class="tab" onclick="switchTab('averiados',this)">⚠️ Averiados <span class="tc" id="tc-a">—</span></div>
 </div>
 
@@ -298,10 +299,10 @@ tbody tr:hover{background:var(--bg3);}
   <!-- ── RESUMEN ── -->
   <div class="panel active" id="panel-resumen">
     <div class="sum-kpis">
-      <div class="kpi pu"><div class="kpi-lbl">Ya vencidos</div><div class="kpi-val pu" id="k-vencidos">—</div><div class="kpi-sub">productos</div></div>
-      <div class="kpi rd"><div class="kpi-lbl">Críticos 1–7d</div><div class="kpi-val rd" id="k-crit">—</div><div class="kpi-sub">urgente</div></div>
-      <div class="kpi or"><div class="kpi-lbl">Alertas 8–30d</div><div class="kpi-val or" id="k-prox">—</div><div class="kpi-sub">atención</div></div>
-      <div class="kpi am"><div class="kpi-lbl">Rango 31–90d</div><div class="kpi-val am" id="k-rango">—</div><div class="kpi-sub">monitorear</div></div>
+      <div class="kpi pu"><div class="kpi-lbl">Vencidos</div><div class="kpi-val pu" id="k-vencidos">—</div><div class="kpi-sub">ya vencidos</div></div>
+      <div class="kpi rd"><div class="kpi-lbl">Próx. críticos</div><div class="kpi-val rd" id="k-crit">—</div><div class="kpi-sub">vencen en 1–7d</div></div>
+      <div class="kpi or"><div class="kpi-lbl">Próx. alerta</div><div class="kpi-val or" id="k-prox">—</div><div class="kpi-sub">vencen en 8–30d</div></div>
+      <div class="kpi am"><div class="kpi-lbl">Próx. rango</div><div class="kpi-val am" id="k-rango">—</div><div class="kpi-sub">vencen en 31–90d</div></div>
       <div class="kpi vd"><div class="kpi-lbl">Averiados</div><div class="kpi-val vd" id="k-aver">—</div><div class="kpi-sub">registros</div></div>
     </div>
 
@@ -329,19 +330,42 @@ tbody tr:hover{background:var(--bg3);}
     </div>
   </div>
 
-  <!-- ── VENCIMIENTOS ── -->
-  <div class="panel" id="panel-vencer">
+  <!-- ── PRÓXIMOS A VENCER ── -->
+  <div class="panel" id="panel-proximos">
     <div class="section">
       <div class="shdr">
-        <div class="stitle">Vencimientos <span class="sbadge am" id="badge-v">—</span></div>
-        <input class="sinp" placeholder="Buscar..." oninput="filterTable('tbl-v',this.value)">
+        <div class="stitle">Próximos a vencer <span class="sbadge am" id="badge-p">—</span></div>
+        <input class="sinp" placeholder="Buscar..." oninput="filterTable('tbl-p',this.value)">
       </div>
       <div class="leyenda">
-        <div class="ley"><span class="pill vencido"><span class="pd"></span>Ya vencido</span></div>
         <div class="ley"><span class="pill critico"><span class="pd"></span>1–7d</span></div>
         <div class="ley"><span class="pill urgente"><span class="pd"></span>8–30d</span></div>
         <div class="ley"><span class="pill pronto"><span class="pd"></span>31–90d</span></div>
         <div class="ley"><span class="pill ok"><span class="pd"></span>+90d</span></div>
+      </div>
+      <div class="twrap">
+        <table id="tbl-p">
+          <thead><tr>
+            <th>Fecha</th><th>Relevador</th><th>Punto de venta</th>
+            <th>Código</th><th>Producto</th>
+            <th>Vencimiento</th><th>Cant.</th><th>Días</th>
+          </tr></thead>
+          <tbody><tr><td colspan="8" class="load-st">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VENCIDOS ── -->
+  <div class="panel" id="panel-vencidos">
+    <div class="section">
+      <div class="shdr">
+        <div class="stitle">Vencidos <span class="sbadge rd" id="badge-v">—</span></div>
+        <input class="sinp" placeholder="Buscar..." oninput="filterTable('tbl-v',this.value)">
+      </div>
+      <div class="leyenda">
+        <div class="ley"><span class="pill vencido"><span class="pd"></span>Ya vencido</span></div>
+        <div class="ley"><span class="pill critico"><span class="pd"></span>Vence hoy / 1–7d</span></div>
       </div>
       <div class="twrap">
         <table id="tbl-v">
@@ -533,19 +557,24 @@ function renderDonut(segments){
 
 function renderAll(){
   const rows=RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
-  const allV=rows.filter(r=>siMatch(r[3])||(siMatch(r[7])&&(r[8]||'').trim()!=''));
+  // Próximos a vencer: col H (idx7)=SI, producto col I (idx8), fecha col J (idx9), cant col K (idx10)
+  const allP=rows.filter(r=>siMatch(r[7])&&(r[8]||'').trim()!='');
+  // Vencidos: col D (idx3)=SI, producto col E (idx4), fecha col F (idx5), cant col G (idx6)
+  const allVenc=rows.filter(r=>siMatch(r[3])&&(r[4]||'').trim()!='');
   const allA=rows.filter(r=>siMatch(r[11]));
 
-  const filtV=allV.filter(r=>inRangoFecha(getFechaVenc(r)));
+  const filtP=allP.filter(r=>inRangoFecha(r[9]));
+  const filtVenc=allVenc.filter(r=>inRangoFecha(r[5]));
   const filtA=allA.filter(r=>inRangoFecha(r[0]));
   const filtM=RAW_MERMA.filter(r=>inRangoFecha(r[0]));
 
-  const sorted=[...filtV].sort((a,b)=>(diasRest(getFechaVenc(a))??9999)-(diasRest(getFechaVenc(b))??9999));
+  const sortedP=[...filtP].sort((a,b)=>(diasRest(a[9])??9999)-(diasRest(b[9])??9999));
+  const sortedV=[...filtVenc].sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999));
 
-  const vencidos=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d<0;});
-  const d0_7=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>=0&&d<=7;});
-  const d8_30=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>7&&d<=30;});
-  const d31_90=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>30&&d<=90;});
+  const vencidos=sortedV.filter(r=>{const d=diasRest(r[5]);return d!==null&&d<0;});
+  const d0_7=sortedP.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>=0&&d<=7;});
+  const d8_30=sortedP.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>7&&d<=30;});
+  const d31_90=sortedP.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>30&&d<=90;});
 
   document.getElementById('k-vencidos').textContent=vencidos.length;
   document.getElementById('k-crit').textContent=d0_7.length;
@@ -553,27 +582,47 @@ function renderAll(){
   document.getElementById('k-rango').textContent=d31_90.length;
   const filtAconDatos=filtA.filter(r=>(r[12]||'').trim()!='');
   document.getElementById('k-aver').textContent=filtAconDatos.length;
-  document.getElementById('tc-v').textContent=filtV.length;
+  document.getElementById('tc-p').textContent=filtP.length;
+  document.getElementById('tc-v').textContent=filtVenc.length;
   document.getElementById('tc-a').textContent=filtAconDatos.length;
-  document.getElementById('badge-v').textContent=filtV.length+' items';
+  document.getElementById('badge-p').textContent=filtP.length+' items';
+  document.getElementById('badge-v').textContent=filtVenc.length+' items';
   document.getElementById('badge-a').textContent=filtAconDatos.length+' items';
-  document.getElementById('total-num').textContent=filtV.length+filtA.length+filtM.length;
+  document.getElementById('total-num').textContent=filtP.length+filtVenc.length+filtAconDatos.length;
 
   renderDonut([
-    {lbl:'Ya vencido',val:vencidos.length,color:'#9b59b6'},
-    {lbl:'1–7 días',val:d0_7.length,color:'#c0392b'},
-    {lbl:'8–30 días',val:d8_30.length,color:'#b85c00'},
-    {lbl:'31–90 días',val:d31_90.length,color:'#d4850a'},
-    {lbl:'+90 días',val:sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>90;}).length,color:'#2d6a2d'},
+    {lbl:'Vencidos',val:vencidos.length,color:'#9b59b6'},
+    {lbl:'Próx. 1–7d',val:d0_7.length,color:'#c0392b'},
+    {lbl:'Próx. 8–30d',val:d8_30.length,color:'#b85c00'},
+    {lbl:'Próx. 31–90d',val:d31_90.length,color:'#d4850a'},
+    {lbl:'Próx. +90d',val:sortedP.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>90;}).length,color:'#2d6a2d'},
   ]);
 
-  renderBarras('bar-pdv',topN(filtV,2),'#4a8c3f');
-  renderBarras('bar-prod',topN(filtV.map(r=>{const{desc}=splitProd(r[4]);return{2:desc};}),2),'#b85c00');
+  renderBarras('bar-pdv',topN(filtP,2),'#4a8c3f');
+  renderBarras('bar-prod',topN(filtP.map(r=>{const{desc}=splitProd(r[8]);return{2:desc};}),2),'#b85c00');
 
-  /* TABLA VENCIMIENTOS */
+  /* TABLA PRÓXIMOS A VENCER (tbl-p) */
+  const tbP=document.querySelector('#tbl-p tbody');
+  tbP.innerHTML=sortedP.length
+    ?sortedP.map(r=>{
+      const{cod,desc}=splitProd(r[8]);
+      const fecha=r[0].split(' ')[0];
+      return`<tr>
+        <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${fecha}</td>
+        <td>${r[1]||'—'}</td>
+        <td>${r[2]||'—'}</td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--tx2);white-space:nowrap">${cod}</td>
+        <td>${desc}</td>
+        <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${r[9]||'—'}</td>
+        <td style="font-family:var(--mono);text-align:right">${r[10]||'—'}</td>
+        <td>${pillDias(diasRest(r[9]))}</td>
+      </tr>`;}).join('')
+    :'<tr><td colspan="8" class="empty-st">Sin próximos a vencer en este rango</td></tr>';
+
+  /* TABLA VENCIDOS (tbl-v) */
   const tbV=document.querySelector('#tbl-v tbody');
-  tbV.innerHTML=sorted.length
-    ?sorted.map(r=>{
+  tbV.innerHTML=sortedV.length
+    ?sortedV.map(r=>{
       const{cod,desc}=splitProd(r[4]);
       const fecha=r[0].split(' ')[0];
       return`<tr>
@@ -584,15 +633,15 @@ function renderAll(){
         <td>${desc}</td>
         <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${r[5]||'—'}</td>
         <td style="font-family:var(--mono);text-align:right">${r[6]||'—'}</td>
-        <td>${pillDias(diasRest(getFechaVenc(r)))}</td>
+        <td>${pillDias(diasRest(r[5]))}</td>
       </tr>`;}).join('')
-    :'<tr><td colspan="8" class="empty-st">Sin registros en este rango</td></tr>';
+    :'<tr><td colspan="8" class="empty-st">Sin vencidos en este rango</td></tr>';
 
   /* TABLA AVERIADOS */
   const tbA=document.querySelector('#tbl-a tbody');
   tbA.innerHTML=filtAconDatos.length
-    ?filtA.map(r=>{
-      const{cod,desc}=splitProd(r[8]);
+    ?filtAconDatos.map(r=>{
+      const{cod,desc}=splitProd(r[12]);
       const fecha=r[0].split(' ')[0];
       return`<tr>
         <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${fecha}</td>
@@ -600,8 +649,8 @@ function renderAll(){
         <td>${r[2]||'—'}</td>
         <td style="font-family:var(--mono);font-size:12px;color:var(--tx2);white-space:nowrap">${cod}</td>
         <td>${desc}</td>
-        <td>${r[9]||'—'}</td>
-        <td style="font-family:var(--mono);text-align:right">${r[10]||'—'}</td>
+        <td>${r[13]||'—'}</td>
+        <td style="font-family:var(--mono);text-align:right">${r[14]||'—'}</td>
       </tr>`;}).join('')
     :'<tr><td colspan="7" class="empty-st">Sin registros de averiados</td></tr>';
 
@@ -622,7 +671,8 @@ async function loadAll(manual){
     RAW_VENCER=data.slice(1);
   }catch(e){
     ok=false;
-    document.querySelector('#tbl-v tbody').innerHTML='<tr><td colspan="8" class="err-st">Error al cargar vencimientos — verificá que el Sheet sea público</td></tr>';
+    document.querySelector('#tbl-p tbody').innerHTML='<tr><td colspan="8" class="err-st">Error al cargar — verificá que el Sheet sea público</td></tr>';
+    document.querySelector('#tbl-v tbody').innerHTML='<tr><td colspan="8" class="err-st">Error al cargar — verificá que el Sheet sea público</td></tr>';
     document.querySelector('#tbl-a tbody').innerHTML='<tr><td colspan="7" class="err-st">Error al cargar averiados</td></tr>';
   }
 
@@ -716,18 +766,21 @@ function exportarPDF(){
   const periodoStr=desdeF||hastaF?`${desdeF||'inicio'} al ${hastaF||'hoy'}`:'Todo el período registrado';
 
   const rows=RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
-  const allV=rows.filter(r=>siMatch(r[3])||(siMatch(r[7])&&(r[8]||'').trim()!=''));
-  const allA=rows.filter(r=>siMatch(r[11]));
-  const filtV=allV.filter(r=>inRangoFecha(getFechaVenc(r)));
+  const allPdf_P=rows.filter(r=>siMatch(r[7])&&(r[8]||'').trim()!='');
+  const allPdf_V=rows.filter(r=>siMatch(r[3])&&(r[4]||'').trim()!='');
+  const allA=rows.filter(r=>siMatch(r[11])).filter(r=>(r[12]||'').trim()!='');
+  const filtP2=allPdf_P.filter(r=>inRangoFecha(r[9]));
+  const filtV=allPdf_V.filter(r=>inRangoFecha(r[5]));
   const filtA=allA.filter(r=>inRangoFecha(r[0]));
   const filtM=RAW_MERMA.filter(r=>inRangoFecha(r[0]));
-  const sorted=[...filtV].sort((a,b)=>(diasRest(getFechaVenc(a))??9999)-(diasRest(getFechaVenc(b))??9999));
+  const sorted=[...filtP2].sort((a,b)=>(diasRest(a[9])??9999)-(diasRest(b[9])??9999));
+  const sortedVenc=[...filtV].sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999));
 
-  const venc=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d<0;});
-  const d0_7=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>=0&&d<=7;});
-  const d8_30=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>7&&d<=30;});
-  const d31_90=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>30&&d<=90;});
-  const dMas90=sorted.filter(r=>{const d=diasRest(getFechaVenc(r));return d!==null&&d>90;});
+  const venc=sortedVenc.filter(r=>{const d=diasRest(r[5]);return d!==null&&d<0;});
+  const d0_7=sorted.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>=0&&d<=7;});
+  const d8_30=sorted.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>7&&d<=30;});
+  const d31_90=sorted.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>30&&d<=90;});
+  const dMas90=sorted.filter(r=>{const d=diasRest(r[9]);return d!==null&&d>90;});
 
   const accentBar=`<div class="pdf-accentbar"></div>`;
 
@@ -803,9 +856,9 @@ function exportarPDF(){
     const cnt={};arr.forEach(r=>{const k=(r[keyIdx]||'—').trim();cnt[k]=(cnt[k]||0)+1;});
     return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,n);
   }
-  const topPDV=topNpdf(filtV,2,5);
+  const topPDV=topNpdf(filtP2,2,5);
   const topAver=topNpdf(filtA,2,5);
-  const totalFilas=filtV.length+filtA.length+filtM.length;
+  const totalFilas=filtP2.length+filtV.length+filtA.length+filtM.length;
   const nivelAlerta=venc.length+d0_7.length>0?'CRÍTICO':d8_30.length>0?'ALTO':d31_90.length>0?'MODERADO':'BAJO';
   const colorAlerta={'CRÍTICO':'#f87171','ALTO':'#fb923c','MODERADO':'#fbbf24','BAJO':'#86efac'}[nivelAlerta];
 
@@ -827,12 +880,12 @@ function exportarPDF(){
           <table class="pdf-table">
             <thead><tr><th>Categoría</th><th>Registros</th><th>%</th></tr></thead>
             <tbody>
-              <tr><td><span class="pdf-pill vencido">Ya vencido</span></td><td>${venc.length}</td><td>${filtV.length?Math.round(venc.length/filtV.length*100):0}%</td></tr>
-              <tr><td><span class="pdf-pill critico">Crítico 1–7d</span></td><td>${d0_7.length}</td><td>${filtV.length?Math.round(d0_7.length/filtV.length*100):0}%</td></tr>
-              <tr><td><span class="pdf-pill urgente">Alerta 8–30d</span></td><td>${d8_30.length}</td><td>${filtV.length?Math.round(d8_30.length/filtV.length*100):0}%</td></tr>
-              <tr><td><span class="pdf-pill pronto">Rango 31–90d</span></td><td>${d31_90.length}</td><td>${filtV.length?Math.round(d31_90.length/filtV.length*100):0}%</td></tr>
-              <tr><td><span class="pdf-pill ok">+90 días</span></td><td>${dMas90.length}</td><td>${filtV.length?Math.round(dMas90.length/filtV.length*100):0}%</td></tr>
-              <tr style="border-top:1px solid rgba(255,255,255,0.15);"><td style="color:#fff;font-weight:600;">TOTAL</td><td style="font-weight:600;">${filtV.length}</td><td>100%</td></tr>
+              <tr><td><span class="pdf-pill vencido">Ya vencido</span></td><td>${venc.length}</td><td>${filtP2.length+filtV.length?Math.round(venc.length/(filtP2.length+filtV.length)*100):0}%</td></tr>
+              <tr><td><span class="pdf-pill critico">Crítico 1–7d</span></td><td>${d0_7.length}</td><td>${filtP2.length?Math.round(d0_7.length/filtP2.length*100):0}%</td></tr>
+              <tr><td><span class="pdf-pill urgente">Alerta 8–30d</span></td><td>${d8_30.length}</td><td>${filtP2.length?Math.round(d8_30.length/filtP2.length*100):0}%</td></tr>
+              <tr><td><span class="pdf-pill pronto">Rango 31–90d</span></td><td>${d31_90.length}</td><td>${filtP2.length?Math.round(d31_90.length/filtP2.length*100):0}%</td></tr>
+              <tr><td><span class="pdf-pill ok">+90 días</span></td><td>${dMas90.length}</td><td>${filtP2.length?Math.round(dMas90.length/filtP2.length*100):0}%</td></tr>
+              <tr style="border-top:1px solid rgba(255,255,255,0.15);"><td style="color:#fff;font-weight:600;">TOTAL</td><td style="font-weight:600;">${filtP2.length+filtV.length}</td><td>100%</td></tr>
             </tbody>
           </table>
         </div>
@@ -869,9 +922,9 @@ function exportarPDF(){
     ${accentBar}
     <div class="pdf-header">
       <div class="pdf-header-top">
-        <div><div class="pdf-title">Detalle de Vencimientos</div>
+        <div><div class="pdf-title">Próximos a vencer</div>
         <div class="pdf-sub">Productos próximos a vencer — ordenados por urgencia · ${periodoStr}</div></div>
-        <div class="pdf-badge">${filtV.length} registros</div>
+        <div class="pdf-badge">${filtP.length+sortedVenc.length} registros</div>
       </div>
     </div>
     <div class="pdf-body">
@@ -884,8 +937,8 @@ function exportarPDF(){
           <td>${desc}</td>
           <td style="font-family:monospace;white-space:nowrap">${r[5]||'—'}</td>
           <td style="text-align:right;white-space:nowrap">${r[6]||'—'}</td>
-          <td style="white-space:nowrap">${pillPDF(diasRest(getFechaVenc(r)))}</td>
-        </tr>`;}).join('')}${sorted.length>24?`<tr><td colspan="7" style="color:rgba(255,255,255,0.35);font-style:italic;padding:8px 10px;">... y ${sorted.length-24} registros más no mostrados</td></tr>`:''}</tbody>
+          <td style="white-space:nowrap">${pillPDF(diasRest(r[9]))}</td>
+        </tr>`;}).join('')}${sorted.length>12?`<tr><td colspan="7" style="color:rgba(255,255,255,0.35);font-style:italic;padding:8px 10px;">... y ${sorted.length-24} registros más no mostrados</td></tr>`:''}</tbody>
       </table>
     </div>
     ${footer(3,6)}
@@ -1038,7 +1091,7 @@ function exportarPDF(){
     return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,n);
   }
 
-  const topVencPDV  = topNgraf(filtV, 2, 8);
+  const topVencPDV  = topNgraf(filtP, 2, 8);
   const topAverPDV  = topNgraf(filtA, 2, 8);
   const topMermaPDV = topNgraf(filtM, 2, 8);
 
@@ -1057,12 +1110,12 @@ function exportarPDF(){
         <div>
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
             <div style="width:10px;height:10px;border-radius:50%;background:#f87171;flex-shrink:0;"></div>
-            <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.09em;">Vencimientos</span>
+            <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.09em;">Próximos a vencer</span>
           </div>
           <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:14px;">
             ${barrasPDV(topVencPDV,'#f87171','rgba(231,76,60,0.15)')}
           </div>
-          <div style="margin-top:8px;font-size:9px;color:rgba(255,255,255,0.3);text-align:right;">${filtV.length} registros totales</div>
+          <div style="margin-top:8px;font-size:9px;color:rgba(255,255,255,0.3);text-align:right;">${filtP2.length} próx. · ${filtV.length} venc.</div>
         </div>
 
         <div>
@@ -1101,13 +1154,12 @@ function exportarExcel(){
   if(!XLSX){ alert('Cargando librería, intentá de nuevo en un segundo...'); return; }
 
   const rows = RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
-  const allV  = rows.filter(r=>siMatch(r[3])||(siMatch(r[7])&&(r[8]||'').trim()!=''));
-  const allA  = rows.filter(r=>siMatch(r[11]));
-  const filtV = allV.filter(r=>inRangoFecha(r[5]));
-  const filtA = allA.filter(r=>inRangoFecha(r[0]));
+  const allPx = rows.filter(r=>siMatch(r[7])&&(r[8]||'').trim()!='');
+  const allVx = rows.filter(r=>siMatch(r[3])&&(r[4]||'').trim()!='');
+  const filtP = allPx.filter(r=>inRangoFecha(r[9]));
+  const filtVx = allVx.filter(r=>inRangoFecha(r[5]));
+  const filtA = rows.filter(r=>siMatch(r[11])).filter(r=>(r[12]||'').trim()!='').filter(r=>inRangoFecha(r[0]));
   const filtM = RAW_MERMA.filter(r=>inRangoFecha(r[0]));
-
-  const sorted = [...filtV].sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999));
 
   function semaforo(dias){
     if(dias===null)     return '⬜ Sin fecha';
@@ -1140,16 +1192,16 @@ function exportarExcel(){
 
   /* ── HOJA 2: AVERIADOS ── */
   const datosA = [
-    ['Fecha relevamiento','Punto de venta','Código de barras','Producto averiado','Motivo de avería','Cantidad']
+    ['Fecha relevamiento','Relevador','Punto de venta','Código de barras','Producto averiado','Motivo de avería','Cantidad']
   ];
   filtA.forEach(r=>{
     const{cod,desc}=splitProd(r[12]);
     datosA.push([
-      r[0].split(' ')[0], r[2]||'', cod, desc, r[13]||'', Number(r[14])||0
+      r[0].split(' ')[0], r[1]||'', r[2]||'', cod, desc, r[13]||'', Number(r[14])||0
     ]);
   });
   const wsA = XLSX.utils.aoa_to_sheet(datosA);
-  wsA['!cols']=[{wch:18},{wch:36},{wch:16},{wch:38},{wch:22},{wch:10}];
+  wsA['!cols']=[{wch:18},{wch:28},{wch:36},{wch:16},{wch:38},{wch:22},{wch:10}];
   wsA['!freeze']={xSplit:0,ySplit:1};
   XLSX.utils.book_append_sheet(wb, wsA, 'Averiados');
 
