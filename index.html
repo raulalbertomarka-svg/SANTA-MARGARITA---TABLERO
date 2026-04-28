@@ -563,8 +563,8 @@ function renderAll(){
   const allVenc=rows.filter(r=>siMatch(r[3])&&(r[4]||'').trim()!='');
   const allA=rows.filter(r=>siMatch(r[11]));
 
-  const filtP=allP.filter(r=>inRangoFecha(r[9]));
-  const filtVenc=allVenc.filter(r=>inRangoFecha(r[5]));
+  const filtP=allP.filter(r=>inRangoFecha(r[0]));
+  const filtVenc=allVenc.filter(r=>inRangoFecha(r[0]));
   const filtA=allA.filter(r=>inRangoFecha(r[0]));
   const filtM=RAW_MERMA.filter(r=>inRangoFecha(r[0]));
 
@@ -769,8 +769,8 @@ function exportarPDF(){
   const allPdf_P=rows.filter(r=>siMatch(r[7])&&(r[8]||'').trim()!='');
   const allPdf_V=rows.filter(r=>siMatch(r[3])&&(r[4]||'').trim()!='');
   const allA=rows.filter(r=>siMatch(r[11])).filter(r=>(r[12]||'').trim()!='');
-  const filtP2=allPdf_P.filter(r=>inRangoFecha(r[9]));
-  const filtV=allPdf_V.filter(r=>inRangoFecha(r[5]));
+  const filtP2=allPdf_P.filter(r=>inRangoFecha(r[0]));
+  const filtV=allPdf_V.filter(r=>inRangoFecha(r[0]));
   const filtA=allA.filter(r=>inRangoFecha(r[0]));
   const filtM=RAW_MERMA.filter(r=>inRangoFecha(r[0]));
   const sorted=[...filtP2].sort((a,b)=>(diasRest(a[9])??9999)-(diasRest(b[9])??9999));
@@ -1156,8 +1156,8 @@ function exportarExcel(){
   const rows = RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
   const allPx = rows.filter(r=>siMatch(r[7])&&(r[8]||'').trim()!='');
   const allVx = rows.filter(r=>siMatch(r[3])&&(r[4]||'').trim()!='');
-  const filtP = allPx.filter(r=>inRangoFecha(r[9]));
-  const filtVx = allVx.filter(r=>inRangoFecha(r[5]));
+  const filtP = allPx.filter(r=>inRangoFecha(r[0]));
+  const filtVx = allVx.filter(r=>inRangoFecha(r[0]));
   const filtA = rows.filter(r=>siMatch(r[11])).filter(r=>(r[12]||'').trim()!='').filter(r=>inRangoFecha(r[0]));
   const filtM = RAW_MERMA.filter(r=>inRangoFecha(r[0]));
 
