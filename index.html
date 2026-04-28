@@ -924,7 +924,7 @@ function exportarPDF(){try{
       <div class="pdf-header-top">
         <div><div class="pdf-title">Próximos a vencer</div>
         <div class="pdf-sub">Productos próximos a vencer — ordenados por urgencia · ${periodoStr}</div></div>
-        <div class="pdf-badge">${filtP.length+sortedVenc.length} registros</div>
+        <div class="pdf-badge">${filtP2.length+sortedVenc.length} registros</div>
       </div>
     </div>
     <div class="pdf-body">
@@ -1091,7 +1091,7 @@ function exportarPDF(){try{
     return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,n);
   }
 
-  const topVencPDV  = topNgraf(filtP, 2, 8);
+  const topVencPDV  = topNgraf(filtP2, 2, 8);
   const topAverPDV  = topNgraf(filtA, 2, 8);
   const topMermaPDV = topNgraf(filtM, 2, 8);
 
