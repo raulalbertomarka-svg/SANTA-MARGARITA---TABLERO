@@ -916,33 +916,70 @@ function exportarPDF(){try{
   </div>`;
 
   /* ─────────────────────────────────────────
-     PÁG 3 — DETALLE VENCIMIENTOS
+     PÁG 3+ — PRÓXIMOS A VENCER + VENCIDOS (paginado dinámico)
   ───────────────────────────────────────── */
-  const pag3=`<div class="pdf-page">
-    ${accentBar}
-    <div class="pdf-header">
-      <div class="pdf-header-top">
-        <div><div class="pdf-title">Próximos a vencer</div>
-        <div class="pdf-sub">Productos próximos a vencer — ordenados por urgencia · ${periodoStr}</div></div>
-        <div class="pdf-badge">${filtP2.length+sortedVenc.length} registros</div>
-      </div>
-    </div>
-    <div class="pdf-body">
-      <table class="pdf-table">
-        <thead><tr><th>Fecha relev.</th><th>Punto de venta</th><th>Código</th><th>Producto</th><th>Vence</th><th>Cant.</th><th>Días</th></tr></thead>
-        <tbody>${sorted.slice(0,24).map(r=>{const{cod,desc}=splitProd(r[8]);return`<tr>
-          <td style="white-space:nowrap">${r[0].split(' ')[0]}</td>
-          <td>${r[2]||'—'}</td>
-          <td style="font-family:monospace;font-size:8px;white-space:nowrap">${cod}</td>
-          <td>${desc}</td>
-          <td style="font-family:monospace;white-space:nowrap">${r[9]||'—'}</td>
-          <td style="text-align:right;white-space:nowrap">${r[10]||'—'}</td>
-          <td style="white-space:nowrap">${pillPDF(diasRest(r[9]))}</td>
-        </tr>`;}).join('')}${sorted.length>12?`<tr><td colspan="7" style="color:rgba(255,255,255,0.35);font-style:italic;padding:8px 10px;">... y ${sorted.length-24} registros más no mostrados</td></tr>`:''}</tbody>
-      </table>
-    </div>
-    ${footer(3,6)}
-  </div>`;
+  function filaProximo(r){
+    const{cod,desc}=splitProd(r[8]);
+    return`<tr>
+      <td style="white-space:nowrap;font-size:10px">${r[0].split(' ')[0]}</td>
+      <td style="font-size:10px">${r[2]||'—'}</td>
+      <td style="font-family:monospace;font-size:8px;white-space:nowrap">${cod}</td>
+      <td style="font-size:10px">${desc}</td>
+      <td style="font-family:monospace;font-size:10px;white-space:nowrap">${r[9]||'—'}</td>
+      <td style="text-align:right;font-size:10px">${r[10]||'—'}</td>
+      <td style="white-space:nowrap">${pillPDF(diasRest(r[9]))}</td>
+    </tr>`;
+  }
+  function filaVencido(r){
+    const{cod,desc}=splitProd(r[4]);
+    return`<tr>
+      <td style="white-space:nowrap;font-size:10px">${r[0].split(' ')[0]}</td>
+      <td style="font-size:10px">${r[2]||'—'}</td>
+      <td style="font-family:monospace;font-size:8px;white-space:nowrap">${cod}</td>
+      <td style="font-size:10px">${desc}</td>
+      <td style="font-family:monospace;font-size:10px;white-space:nowrap">${r[5]||'—'}</td>
+      <td style="text-align:right;font-size:10px">${r[6]||'—'}</td>
+      <td style="white-space:nowrap">${pillPDF(diasRest(r[5]))}</td>
+    </tr>`;
+  }
+  const FILAS_PAG=30;
+  function paginaTabla(titulo,sub,badge,filas,fnFila,numPagBase){
+    if(!filas.length) return '';
+    const paginas=[];
+    for(let i=0;i<filas.length;i+=FILAS_PAG){
+      const chunk=filas.slice(i,i+FILAS_PAG);
+      const esPrimera=i===0;
+      const numPag=numPagBase+paginas.length;
+      paginas.push(\`<div class="pdf-page">
+        \${accentBar}
+        <div class="pdf-header">
+          <div class="pdf-header-top">
+            <div>
+              <div class="pdf-title">\${titulo}\${!esPrimera?' (cont.)':''}</div>
+              <div class="pdf-sub">\${sub}</div>
+            </div>
+            <div class="pdf-badge">\${badge} · pág. \${numPag}</div>
+          </div>
+        </div>
+        <div class="pdf-body">
+          <table class="pdf-table">
+            <thead><tr><th>Fecha relev.</th><th>Punto de venta</th><th>Código</th><th>Producto</th><th>Vence</th><th>Cant.</th><th>Días</th></tr></thead>
+            <tbody>\${chunk.map(fnFila).join('')}</tbody>
+          </table>
+        </div>
+        <div class="pdf-footer">
+          <span>SANTA MARGARITA S.A. · Laboratorio y Herboristería · Reporte de Campo · \${fechaStr}</span>
+          <span>Pág. \${numPag}</span>
+        </div>
+      </div>\`);
+    }
+    return paginas.join('');
+  }
+
+  const paginasProximos=Math.ceil(sorted.length/FILAS_PAG)||1;
+  const paginasVencidos=Math.ceil(sortedVenc.length/FILAS_PAG);
+  const pag3=paginaTabla('Próximos a vencer',\`Ordenados por urgencia · \${periodoStr}\`,\`\${sorted.length} registros\`,sorted,filaProximo,3);
+  const pag3b=paginaTabla('Vencidos',\`Fecha de vencimiento superada · \${periodoStr}\`,\`\${sortedVenc.length} registros\`,sortedVenc,filaVencido,3+paginasProximos);
 
   /* ─────────────────────────────────────────
      PÁG 4 — AVERIADOS + MERMA
@@ -1145,7 +1182,7 @@ function exportarPDF(){try{
     ${footer(6,6)}
   </div>`;
 
-  document.getElementById('pdf-report').innerHTML=pag1+pag2+pag3+pag4+pag5+pag6;
+  document.getElementById('pdf-report').innerHTML=pag1+pag2+pag3+pag3b+pag4+pag5+pag6;
   window.print();
 }catch(e){alert('Error PDF: '+e.message);console.error(e);}}
 
