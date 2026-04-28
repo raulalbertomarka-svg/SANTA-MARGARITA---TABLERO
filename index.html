@@ -787,7 +787,7 @@ function exportarPDF(){try{
   function footer(pag,total){
     return`<div class="pdf-footer">
       <span>SANTA MARGARITA S.A. · Laboratorio y Herboristería · Reporte de Campo · ${fechaStr}</span>
-      <span>Pág. ${pag}${total?` de ${total}`:''} · CONFIDENCIAL – USO INTERNO</span>
+      <span>Pág. ${pag}${total?` de ${total}`:''}</span>
     </div>`;
   }
 
@@ -930,13 +930,13 @@ function exportarPDF(){try{
     <div class="pdf-body">
       <table class="pdf-table">
         <thead><tr><th>Fecha relev.</th><th>Punto de venta</th><th>Código</th><th>Producto</th><th>Vence</th><th>Cant.</th><th>Días</th></tr></thead>
-        <tbody>${sorted.slice(0,24).map(r=>{const{cod,desc}=splitProd(r[4]);return`<tr>
+        <tbody>${sorted.slice(0,24).map(r=>{const{cod,desc}=splitProd(r[8]);return`<tr>
           <td style="white-space:nowrap">${r[0].split(' ')[0]}</td>
           <td>${r[2]||'—'}</td>
           <td style="font-family:monospace;font-size:8px;white-space:nowrap">${cod}</td>
           <td>${desc}</td>
-          <td style="font-family:monospace;white-space:nowrap">${r[5]||'—'}</td>
-          <td style="text-align:right;white-space:nowrap">${r[6]||'—'}</td>
+          <td style="font-family:monospace;white-space:nowrap">${r[9]||'—'}</td>
+          <td style="text-align:right;white-space:nowrap">${r[10]||'—'}</td>
           <td style="white-space:nowrap">${pillPDF(diasRest(r[9]))}</td>
         </tr>`;}).join('')}${sorted.length>12?`<tr><td colspan="7" style="color:rgba(255,255,255,0.35);font-style:italic;padding:8px 10px;">... y ${sorted.length-24} registros más no mostrados</td></tr>`:''}</tbody>
       </table>
@@ -1173,22 +1173,33 @@ function exportarExcel(){try{
 
   const wb = XLSX.utils.book_new();
 
-  /* ── HOJA 1: VENCIMIENTOS ── */
-  const datosV = [
-    ['Fecha relevamiento','Punto de venta','Código de barras','Producto','Fecha vencimiento','Cantidad','Días restantes','Semáforo']
+  /* ── HOJA 1: PRÓXIMOS A VENCER (col H-K, idx 7-10) ── */
+  const datosP = [
+    ['Fecha relevamiento','Relevador','Punto de venta','Código de barras','Producto','Fecha vencimiento','Cantidad','Días restantes','Semáforo']
   ];
-  sorted.forEach(r=>{
+  filtP.sort((a,b)=>(diasRest(a[9])??9999)-(diasRest(b[9])??9999)).forEach(r=>{
+    const{cod,desc}=splitProd(r[8]);
+    const d=diasRest(r[9]);
+    datosP.push([r[0].split(' ')[0], r[1]||'', r[2]||'', cod, desc, r[9]||'', Number(r[10])||0, d!==null?d:'', semaforo(d)]);
+  });
+  const wsP = XLSX.utils.aoa_to_sheet(datosP);
+  wsP['!cols']=[{wch:18},{wch:28},{wch:36},{wch:16},{wch:40},{wch:16},{wch:10},{wch:14},{wch:22}];
+  wsP['!freeze']={xSplit:0,ySplit:1};
+  XLSX.utils.book_append_sheet(wb, wsP, 'Próximos a vencer');
+
+  /* ── HOJA 2: VENCIDOS (col D-G, idx 3-6) ── */
+  const datosV = [
+    ['Fecha relevamiento','Relevador','Punto de venta','Código de barras','Producto','Fecha vencimiento','Cantidad','Días restantes','Semáforo']
+  ];
+  filtVx.sort((a,b)=>(diasRest(a[5])??9999)-(diasRest(b[5])??9999)).forEach(r=>{
     const{cod,desc}=splitProd(r[4]);
-    const d=diasRest(getFechaVenc(r));
-    datosV.push([
-      r[0].split(' ')[0], r[2]||'', cod, desc,
-      r[5]||'', Number(r[6])||0, d!==null?d:'', semaforo(d)
-    ]);
+    const d=diasRest(r[5]);
+    datosV.push([r[0].split(' ')[0], r[1]||'', r[2]||'', cod, desc, r[5]||'', Number(r[6])||0, d!==null?d:'', semaforo(d)]);
   });
   const wsV = XLSX.utils.aoa_to_sheet(datosV);
-  wsV['!cols']=[{wch:18},{wch:36},{wch:16},{wch:38},{wch:16},{wch:10},{wch:14},{wch:22}];
+  wsV['!cols']=[{wch:18},{wch:28},{wch:36},{wch:16},{wch:40},{wch:16},{wch:10},{wch:14},{wch:22}];
   wsV['!freeze']={xSplit:0,ySplit:1};
-  XLSX.utils.book_append_sheet(wb, wsV, 'Vencimientos');
+  XLSX.utils.book_append_sheet(wb, wsV, 'Vencidos');
 
   /* ── HOJA 2: AVERIADOS ── */
   const datosA = [
