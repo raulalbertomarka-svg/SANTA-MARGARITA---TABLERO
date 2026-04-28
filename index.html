@@ -754,7 +754,7 @@ function pillPDF(dias){
   return`<span class="pdf-pill ok">${dias}</span>`;
 }
 
-function exportarPDF(){
+function exportarPDF(){try{
   const ahora=new Date();
   const dd=n=>String(n).padStart(2,'0');
   const fechaStr=`${dd(ahora.getDate())}/${dd(ahora.getMonth()+1)}/${ahora.getFullYear()}`;
@@ -1147,9 +1147,9 @@ function exportarPDF(){
 
   document.getElementById('pdf-report').innerHTML=pag1+pag2+pag3+pag4+pag5+pag6;
   window.print();
-}
+}catch(e){alert('Error PDF: '+e.message);console.error(e);}}
 
-function exportarExcel(){
+function exportarExcel(){try{
   const XLSX = window.XLSX;
   if(!XLSX){ alert('Cargando librería, intentá de nuevo en un segundo...'); return; }
 
@@ -1224,7 +1224,7 @@ function exportarExcel(){
   const hoy=new Date();
   const fn=`SantaMargarita_${String(hoy.getDate()).padStart(2,'0')}${String(hoy.getMonth()+1).padStart(2,'0')}${hoy.getFullYear()}.xlsx`;
   XLSX.writeFile(wb, fn);
-}
+}catch(e){alert('Error Excel: '+e.message);console.error(e);}}
 
 loadAll();
 setInterval(loadAll,5*60*1000);
