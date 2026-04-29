@@ -116,21 +116,21 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 .sbadge.am{background:var(--am-bg);color:var(--am);border:1px solid var(--am-br);}
 .sbadge.rd{background:var(--rd-bg);color:var(--rd);border:1px solid var(--rd-br);}
 .sbadge.tl{background:var(--tl-bg);color:var(--tl);border:1px solid var(--tl-br);}
-.sinp{background:var(--bg3);border:1px solid var(--brd);color:var(--tx);padding:5px 10px;border-radius:7px;font-family:var(--font);font-size:12px;outline:none;width:170px;}
-.sselect{background:var(--bg3);border:1px solid var(--brd);color:var(--tx);padding:5px 10px;border-radius:7px;font-family:var(--font);font-size:12px;outline:none;cursor:pointer;max-width:200px;}
-.sselect:focus{border-color:var(--vm);}
-.master-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;}
-.master-card{background:var(--bg2);border:1px solid var(--brd);border-radius:10px;padding:16px;}
-.master-card-title{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
-.master-count{background:var(--vs);border:1px solid var(--vb);color:var(--vd);font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:10px;}
-.master-list{max-height:220px;overflow-y:auto;}
-.master-list::-webkit-scrollbar{width:4px;}
-.master-list::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:4px;}
-.master-item{padding:6px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx);display:flex;align-items:center;justify-content:space-between;}
-.master-item:last-child{border-bottom:none;}
-.master-item-sub{font-size:10px;color:var(--tx3);font-family:var(--mono);}
+.sinp{background:var(--bg3);border:1px solid var(--brd);color:var(--tx);padding:5px 10px;border-radius:7px;font-family:var(--font);font-size:12px;outline:none;width:150px;}
 .sinp:focus{border-color:var(--vm);}
 .sinp::placeholder{color:var(--tx3);}
+.sselect{background:var(--bg3);border:1px solid var(--brd);color:var(--tx);padding:5px 10px;border-radius:7px;font-family:var(--font);font-size:12px;outline:none;cursor:pointer;max-width:190px;}
+.sselect:focus{border-color:var(--vm);}
+.master-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;}
+.mcard2{background:var(--bg2);border:1px solid var(--brd);border-radius:10px;padding:16px;}
+.mcard2-title{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.mcard2-cnt{background:var(--vs);border:1px solid var(--vb);color:var(--vd);font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:10px;flex-shrink:0;}
+.mlist{max-height:200px;overflow-y:auto;}
+.mlist::-webkit-scrollbar{width:4px;}
+.mlist::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:4px;}
+.mitem{padding:6px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.mitem:last-child{border-bottom:none;}
+.mitem-sub{font-size:10px;color:var(--tx3);font-family:var(--mono);text-align:right;}
 
 .leyenda{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
 .ley{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2);}
@@ -340,20 +340,21 @@ tbody tr:hover{background:var(--bg3);}
       </div>
 
     </div>
-  <div class="master-grid" id="master-grid">
-      <div class="master-card">
-        <div class="master-card-title">
-          📍 Puntos de venta activos
-          <span class="master-count" id="pdv-count">—</span>
-        </div>
-        <div class="master-list" id="pdv-list"><div class="load-st" style="padding:12px">Cargando...</div></div>
-      </div>
-      <div class="master-card">
-        <div class="master-card-title">
+
+    <div class="master-grid" id="master-grid">
+      <div class="mcard2">
+        <div class="mcard2-title">
           👤 Relevadores activos
-          <span class="master-count" id="relev-count">—</span>
+          <span class="mcard2-cnt" id="relev-count">—</span>
         </div>
-        <div class="master-list" id="relev-list"><div class="load-st" style="padding:12px">Cargando...</div></div>
+        <div class="mlist" id="relev-list"><div class="load-st" style="padding:10px">Cargando...</div></div>
+      </div>
+      <div class="mcard2">
+        <div class="mcard2-title">
+          📍 Puntos de venta (Hoja 2)
+          <span class="mcard2-cnt" id="pdv-count">—</span>
+        </div>
+        <div class="mlist" id="pdv-list"><div class="load-st" style="padding:10px">Cargando...</div></div>
       </div>
     </div>
   </div>
@@ -363,11 +364,7 @@ tbody tr:hover{background:var(--bg3);}
     <div class="section">
       <div class="shdr">
         <div class="stitle">Próximos a vencer <span class="sbadge am" id="badge-p">—</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <select class="sselect" id="sel-pdv-p" onchange="aplicarFiltrosTabla('p')"><option value="">Todos los PDV</option></select>
-          <select class="sselect" id="sel-relev-p" onchange="aplicarFiltrosTabla('p')"><option value="">Todos los relevadores</option></select>
-          <input class="sinp" id="sinp-p" placeholder="Buscar..." oninput="aplicarFiltrosTabla('p')">
-        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><select class="sselect" id="sel-relev-tbl-p" onchange="apFiltro('tbl-p')"><option value="">Todos los relevadores</option></select><select class="sselect" id="sel-pdv-tbl-p" onchange="apFiltro('tbl-p')"><option value="">Todos los PDV</option></select><input class="sinp" id="sinp-tbl-p" placeholder="Buscar..." oninput="apFiltro('tbl-p')"></div>
       </div>
       <div class="leyenda">
         <div class="ley"><span class="pill critico"><span class="pd"></span>1–7d</span></div>
@@ -393,11 +390,7 @@ tbody tr:hover{background:var(--bg3);}
     <div class="section">
       <div class="shdr">
         <div class="stitle">Vencidos <span class="sbadge rd" id="badge-v">—</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <select class="sselect" id="sel-pdv-v" onchange="aplicarFiltrosTabla('v')"><option value="">Todos los PDV</option></select>
-          <select class="sselect" id="sel-relev-v" onchange="aplicarFiltrosTabla('v')"><option value="">Todos los relevadores</option></select>
-          <input class="sinp" id="sinp-v" placeholder="Buscar..." oninput="aplicarFiltrosTabla('v')">
-        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><select class="sselect" id="sel-relev-tbl-v" onchange="apFiltro('tbl-v')"><option value="">Todos los relevadores</option></select><select class="sselect" id="sel-pdv-tbl-v" onchange="apFiltro('tbl-v')"><option value="">Todos los PDV</option></select><input class="sinp" id="sinp-tbl-v" placeholder="Buscar..." oninput="apFiltro('tbl-v')"></div>
       </div>
       <div class="leyenda">
         <div class="ley"><span class="pill vencido"><span class="pd"></span>Ya vencido</span></div>
@@ -421,11 +414,7 @@ tbody tr:hover{background:var(--bg3);}
     <div class="section">
       <div class="shdr">
         <div class="stitle">Averiados <span class="sbadge rd" id="badge-a">—</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <select class="sselect" id="sel-pdv-a" onchange="aplicarFiltrosTabla('a')"><option value="">Todos los PDV</option></select>
-          <select class="sselect" id="sel-relev-a" onchange="aplicarFiltrosTabla('a')"><option value="">Todos los relevadores</option></select>
-          <input class="sinp" id="sinp-a" placeholder="Buscar..." oninput="aplicarFiltrosTabla('a')">
-        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><select class="sselect" id="sel-relev-tbl-a" onchange="apFiltro('tbl-a')"><option value="">Todos los relevadores</option></select><select class="sselect" id="sel-pdv-tbl-a" onchange="apFiltro('tbl-a')"><option value="">Todos los PDV</option></select><input class="sinp" id="sinp-tbl-a" placeholder="Buscar..." oninput="apFiltro('tbl-a')"></div>
       </div>
       <div class="twrap">
         <table id="tbl-a">
@@ -451,7 +440,7 @@ tbody tr:hover{background:var(--bg3);}
 const SH_VENCER = '1-5bQ6-rkcu9QxjmzuPUC5cd6Ciqks5M7i3t5WMVeCN8';
 const SH_MERMA  = '1vTQXqkYEolkC0EDtH4tbUclplFZuPJZOH2gcwiH99MI';
 
-let RAW_VENCER=[], RAW_MERMA=[], RAW_PDV=[], RAW_RELEV=[];
+let RAW_VENCER=[], RAW_MERMA=[], RAW_RELEV_PDV=[], RAW_RELEV=[];
 
 function csvUrl(id,sheet){return`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;}
 
@@ -548,84 +537,67 @@ function inRangoFecha(dateStr){
 
 function setStatus(state,msg){document.getElementById('sdot').className='sdot '+state;document.getElementById('stxt').textContent=msg;}
 function updateTime(){const n=new Date();document.getElementById('stime').textContent=`Actualizado ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
-/* ── MAESTROS: PDV y RELEVADORES ── */
-function poblarSelect(id, items){
-  const sel = document.getElementById(id);
-  if(!sel) return;
-  const current = sel.value;
-  sel.innerHTML = '<option value="">'+sel.options[0].text+'</option>';
-  items.forEach(v => {
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v;
-    sel.appendChild(o);
-  });
-  sel.value = current;
-}
-
-function aplicarFiltrosTabla(tipo){
-  const pdv   = (document.getElementById('sel-pdv-'+tipo)||{}).value||'';
-  const relev = (document.getElementById('sel-relev-'+tipo)||{}).value||'';
-  const q     = ((document.getElementById('sinp-'+tipo)||{}).value||'').toLowerCase();
-  const id = 'tbl-'+tipo;
-  document.querySelectorAll('#'+id+' tbody tr').forEach(row=>{
-    if(row.querySelector('.load-st,.empty-st,.err-st')) return;
-    const txt = row.textContent.toLowerCase();
-    const cells = row.querySelectorAll('td');
-    const rowPDV   = cells[2]?cells[2].textContent.trim():'';
-    const rowRelev = cells[1]?cells[1].textContent.trim():'';
-    const okPDV   = !pdv   || rowPDV===pdv;
-    const okRelev = !relev || rowRelev===relev;
-    const okQ     = !q     || txt.includes(q);
-    row.style.display = (okPDV && okRelev && okQ) ? '' : 'none';
-  });
-}
-
-function renderMaestros(){
-  // PDV
-  const pdvList = document.getElementById('pdv-list');
-  const relevList = document.getElementById('relev-list');
-  if(RAW_PDV.length){
-    const pdvs = RAW_PDV.filter(r=>r[0]&&r[0].trim()).map(r=>r[0].trim());
-    document.getElementById('pdv-count').textContent = pdvs.length;
-    pdvList.innerHTML = pdvs.map(p=>
-      '<div class="master-item"><span>'+p+'</span></div>'
-    ).join('') || '<div class="empty-st" style="padding:8px">Sin datos</div>';
-    // Poblar selects de todas las pestañas
-    ['p','v','a'].forEach(t=>{
-      const prev = (document.getElementById('sel-pdv-'+t)||{}).value||'';
-      poblarSelect('sel-pdv-'+t, pdvs);
-      const el = document.getElementById('sel-pdv-'+t);
-      if(el) el.options[0].text = 'Todos los PDV ('+pdvs.length+')';
-    });
-  }
-  if(RAW_RELEV.length){
-    const relevs = RAW_RELEV.filter(r=>r[0]&&r[0].trim()).map(r=>{
-      return {nombre: r[0].trim(), cedula: r[1]?r[1].trim():''};
-    });
-    document.getElementById('relev-count').textContent = relevs.length;
-    relevList.innerHTML = relevs.map(r=>
-      '<div class="master-item"><span>'+r.nombre+'</span><span class="master-item-sub">CI: '+r.cedula+'</span></div>'
-    ).join('') || '<div class="empty-st" style="padding:8px">Sin datos</div>';
-    ['p','v','a'].forEach(t=>{
-      poblarSelect('sel-relev-'+t, relevs.map(r=>r.nombre));
-      const el = document.getElementById('sel-relev-'+t);
-      if(el) el.options[0].text = 'Todos los relevadores ('+relevs.length+')';
-    });
-  }
-}
-
 function filterTable(id,q){
-  const tipo = id.replace('tbl-','');
-  const sinp = document.getElementById('sinp-'+tipo);
-  if(sinp){ sinp.value=q; aplicarFiltrosTabla(tipo); return; }
   const s=q.toLowerCase();
-  document.querySelectorAll('#'+id+' tbody tr').forEach(row=>{
+  document.querySelectorAll(`#${id} tbody tr`).forEach(row=>{
     if(row.querySelector('.load-st,.empty-st,.err-st'))return;
     row.style.display=row.textContent.toLowerCase().includes(s)?'':'none';
   });
 }
 
+/* ── FILTROS COMBINADOS ── */
+function apFiltro(tabId){
+  const relev=(document.getElementById('sel-relev-'+tabId)||{value:''}).value;
+  const pdv  =(document.getElementById('sel-pdv-'+tabId)||{value:''}).value;
+  const q    =((document.getElementById('sinp-'+tabId)||{value:''}).value).toLowerCase();
+  document.querySelectorAll('#'+tabId+' tbody tr').forEach(row=>{
+    if(row.querySelector('.load-st,.empty-st,.err-st'))return;
+    const cells=row.querySelectorAll('td');
+    // col 1 = relevador, col 2 = punto de venta
+    const rRelev=cells[1]?cells[1].textContent.trim():'';
+    const rPDV  =cells[2]?cells[2].textContent.trim():'';
+    const okR=!relev||rRelev===relev;
+    const okP=!pdv  ||rPDV===pdv;
+    const okQ=!q    ||row.textContent.toLowerCase().includes(q);
+    row.style.display=(okR&&okP&&okQ)?'':'none';
+  });
+}
 
+/* ── POBLAR SELECT ── */
+function poblarSelect(id, items, placeholder){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const prev=el.value;
+  el.innerHTML='<option value="">'+placeholder+'</option>';
+  items.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});
+  if([...el.options].some(o=>o.value===prev)) el.value=prev;
+}
+
+/* ── RENDER MAESTROS ── */
+function renderMaestros(){
+  // Hoja 3 → relevadores (col A: nombre)
+  const relevadores=RAW_RELEV.filter(r=>r[0]&&r[0].trim()).map(r=>r[0].trim());
+  document.getElementById('relev-count').textContent=relevadores.length;
+  const relevList=document.getElementById('relev-list');
+  relevList.innerHTML=relevadores.length
+    ?relevadores.map(n=>'<div class="mitem"><span>'+n+'</span></div>').join('')
+    :'<div class="empty-st" style="padding:8px">Sin datos en Hoja 3</div>';
+
+  // Hoja 2 → relevador + PDV (col A: nombre, col B: PDV)
+  const pares=RAW_RELEV_PDV.filter(r=>r[0]&&r[0].trim());
+  const pdvUnicos=[...new Set(pares.map(r=>(r[1]||'').trim()).filter(v=>v))];
+  document.getElementById('pdv-count').textContent=pdvUnicos.length;
+  const pdvList=document.getElementById('pdv-list');
+  pdvList.innerHTML=pares.length
+    ?pares.map(r=>'<div class="mitem"><span>'+(r[0]||'—')+'</span><span class="mitem-sub">'+(r[1]||'—')+'</span></div>').join('')
+    :'<div class="empty-st" style="padding:8px">Sin datos en Hoja 2</div>';
+
+  // Poblar selects de las 3 pestañas
+  ['tbl-p','tbl-v','tbl-a'].forEach(t=>{
+    poblarSelect('sel-relev-'+t, relevadores, 'Todos los relevadores ('+relevadores.length+')');
+    poblarSelect('sel-pdv-'+t,   pdvUnicos,   'Todos los PDV ('+pdvUnicos.length+')');
+  });
+}
 function switchTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('panel-'+name).classList.add('active');}
 function toggleTheme(){const b=document.body;const isL=b.dataset.theme==='light';b.dataset.theme=isL?'dark':'light';document.getElementById('theme-icon').textContent=isL?'☀️':'🌙';}
 
@@ -803,13 +775,13 @@ async function loadAll(manual){
 
   try{
     const data=await fetchCSV(csvUrl(SH_VENCER,'Hoja 2'));
-    RAW_PDV=data.slice(1).filter(r=>r[0]&&r[0].trim());
-  }catch(e){ console.warn('Hoja 2 (PDV):', e); }
+    RAW_RELEV_PDV=data.slice(1).filter(r=>r[0]&&r[0].trim());
+  }catch(e){ console.warn('Hoja 2:', e); }
 
   try{
     const data=await fetchCSV(csvUrl(SH_VENCER,'Hoja 3'));
     RAW_RELEV=data.slice(1).filter(r=>r[0]&&r[0].trim());
-  }catch(e){ console.warn('Hoja 3 (Relevadores):', e); }
+  }catch(e){ console.warn('Hoja 3:', e); }
 
   renderAll();
   renderMaestros();
