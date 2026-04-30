@@ -294,6 +294,7 @@ tbody tr:hover{background:var(--bg3);}
   <div class="tab" onclick="switchTab('proximos',this)">⏰ Próximos a vencer <span class="tc" id="tc-p">—</span></div>
   <div class="tab" onclick="switchTab('vencidos',this)">🔴 Vencidos <span class="tc" id="tc-v">—</span></div>
   <div class="tab" onclick="switchTab('averiados',this)">⚠️ Averiados <span class="tc" id="tc-a">—</span></div>
+  <div class="tab" onclick="switchTab('cumplimiento',this)">✅ Cumplimiento <span class="tc" id="tc-cumpl">—</span></div>
 </div>
 
 <div class="main">
@@ -402,6 +403,54 @@ tbody tr:hover{background:var(--bg3);}
     </div>
   </div>
 
+  <!-- ── CUMPLIMIENTO ── -->
+  <div class="panel" id="panel-cumplimiento">
+    <div class="section">
+
+      <!-- KPIs de cumplimiento -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="kpi vd"><div class="kpi-lbl">Total asignados</div><div class="kpi-val vd" id="cumpl-total">—</div><div class="kpi-sub">PDVs en el ruteo</div></div>
+        <div class="kpi tl"><div class="kpi-lbl">Cargados</div><div class="kpi-val tl" id="cumpl-cargados">—</div><div class="kpi-sub">Con reporte en el período</div></div>
+        <div class="kpi rd"><div class="kpi-lbl">Pendientes</div><div class="kpi-val rd" id="cumpl-pendientes">—</div><div class="kpi-sub">Sin reporte cargado</div></div>
+        <div class="kpi am"><div class="kpi-lbl">% Cumplimiento</div><div class="kpi-val am" id="cumpl-pct">—</div><div class="kpi-sub">Meta: 100%</div></div>
+      </div>
+
+      <!-- Alerta -->
+      <div id="cumpl-alerta" style="display:none;background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.3);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--rd);display:flex;align-items:center;gap:10px;">
+        ⚠️ <span id="cumpl-alerta-txt"></span>
+      </div>
+
+      <!-- Barras por relevador -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="chart-card">
+          <div class="chart-title">📊 Locales cargados vs. asignados — por relevador</div>
+          <div id="cumpl-barras" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">📋 Brecha operativa — detalle por relevador</div>
+          <div style="overflow:auto;max-height:400px;">
+            <table id="tbl-cumpl" style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead><tr>
+                <th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;background:var(--bg3);border-bottom:1px solid var(--brd);">Relevador</th>
+                <th style="text-align:center;padding:7px 10px;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;background:var(--bg3);border-bottom:1px solid var(--brd);">Asig.</th>
+                <th style="text-align:center;padding:7px 10px;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;background:var(--bg3);border-bottom:1px solid var(--brd);">Carg.</th>
+                <th style="text-align:center;padding:7px 10px;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;background:var(--bg3);border-bottom:1px solid var(--brd);">Pend.</th>
+                <th style="text-align:center;padding:7px 10px;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;background:var(--bg3);border-bottom:1px solid var(--brd);">Cumpl.</th>
+              </tr></thead>
+              <tbody id="tbody-cumpl"><tr><td colspan="5" class="load-st">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalle expandible por relevador -->
+      <div class="chart-card">
+        <div class="chart-title">📍 Detalle de visitas por relevador</div>
+        <div id="cumpl-detalle" style="max-height:500px;overflow-y:auto;"></div>
+      </div>
+
+    </div>
+  </div>
 
 </div>
 
@@ -557,7 +606,151 @@ function renderMaestros(){
     poblarSelect('sel-pdv-'+t,   pdvUnicos,   'Todos los PDV ('+pdvUnicos.length+')');
   });
 }
-function switchTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('panel-'+name).classList.add('active');}
+/* ── CUMPLIMIENTO ── */
+function renderCumplimiento(){
+  if(!RAW_RELEV_PDV.length) return;
+
+  // Construir ruteo: { relevador → [pdvs asignados] }
+  const ruteo={};
+  RAW_RELEV_PDV.forEach(r=>{
+    const relev=(r[0]||'').trim();
+    const pdv  =(r[1]||'').trim();
+    if(!relev||!pdv) return;
+    if(!ruteo[relev]) ruteo[relev]=[];
+    ruteo[relev].push(pdv);
+  });
+
+  // Construir visitas desde Hoja 1 en el rango seleccionado
+  // Una visita = cualquier fila en RAW_VENCER donde relevador (r[1]) + PDV (r[2]) coincidan
+  const rows=RAW_VENCER.filter(r=>r.some(c=>c&&c.trim()));
+  const visitados={}; // { "relev||pdv" → true }
+  rows.forEach(r=>{
+    if(!inRangoFecha(r[0])) return;
+    const relev=(r[1]||'').trim().toUpperCase();
+    const pdv  =(r[2]||'').trim().toUpperCase();
+    if(relev&&pdv) visitados[relev+'|||'+pdv]=true;
+  });
+
+  function fueVisitado(relev, pdv){
+    return !!(visitados[relev.toUpperCase()+'|||'+pdv.toUpperCase()]);
+  }
+
+  // Calcular métricas globales
+  let totalAsig=0, totalCarg=0;
+  const relevadores=Object.keys(ruteo).sort();
+  const stats=relevadores.map(relev=>{
+    const pdvs=ruteo[relev];
+    const cargados=pdvs.filter(p=>fueVisitado(relev,p)).length;
+    const pendientes=pdvs.length-cargados;
+    const pct=pdvs.length?Math.round(cargados/pdvs.length*100):0;
+    totalAsig+=pdvs.length; totalCarg+=cargados;
+    return {relev, pdvs, cargados, pendientes, pct};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  const totalPend=totalAsig-totalCarg;
+  const totalPct=totalAsig?Math.round(totalCarg/totalAsig*100):0;
+
+  // KPIs
+  document.getElementById('cumpl-total').textContent=totalAsig;
+  document.getElementById('cumpl-cargados').textContent=totalCarg;
+  document.getElementById('cumpl-pendientes').textContent=totalPend;
+  document.getElementById('cumpl-pct').textContent=totalPct+'%';
+  document.getElementById('tc-cumpl').textContent=totalPct+'%';
+
+  // Alerta
+  const alerta=document.getElementById('cumpl-alerta');
+  const alertaTxt=document.getElementById('cumpl-alerta-txt');
+  if(totalPend>0){
+    alerta.style.display='flex';
+    alertaTxt.textContent='El '+(100-totalPct)+'% de los locales asignados no presentan reporte cargado en el período seleccionado.';
+  } else {
+    alerta.style.display='none';
+  }
+
+  // Color por porcentaje
+  function colorPct(pct){
+    if(pct===100) return '#27ae60';
+    if(pct>=67)   return '#f39c12';
+    if(pct>=33)   return '#e67e22';
+    return '#e74c3c';
+  }
+
+  // Barras por relevador
+  const barrasEl=document.getElementById('cumpl-barras');
+  barrasEl.innerHTML=stats.map(s=>{
+    const col=colorPct(s.pct);
+    const colBg=s.pct<33?'rgba(231,76,60,0.15)':'rgba(255,255,255,0.06)';
+    return '<div style="display:flex;flex-direction:column;gap:4px;">'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;">'+
+        '<span style="color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:72%;">'+s.relev+'</span>'+
+        '<span style="color:'+col+';font-family:var(--mono);font-weight:700;flex-shrink:0;">'+s.pct+'%</span>'+
+      '</div>'+
+      '<div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">'+
+        '<div style="height:100%;width:'+s.pct+'%;background:'+col+';border-radius:4px;transition:width .4s;"></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  // Tabla resumen
+  const tbody=document.getElementById('tbody-cumpl');
+  tbody.innerHTML=stats.map(s=>{
+    const col=colorPct(s.pct);
+    return '<tr style="border-bottom:1px solid var(--brd);">'+
+      '<td style="padding:8px 10px;color:var(--tx);font-size:12px;">'+s.relev+'</td>'+
+      '<td style="padding:8px 10px;text-align:center;font-family:var(--mono);color:var(--tx2);">'+s.pdvs.length+'</td>'+
+      '<td style="padding:8px 10px;text-align:center;font-family:var(--mono);color:#27ae60;font-weight:600;">'+s.cargados+'</td>'+
+      '<td style="padding:8px 10px;text-align:center;font-family:var(--mono);color:var(--rd);font-weight:600;">'+s.pendientes+'</td>'+
+      '<td style="padding:8px 10px;text-align:center;font-family:var(--mono);font-weight:700;color:'+col+';">'+s.pct+'%</td>'+
+    '</tr>';
+  }).join('');
+
+  // Detalle expandible
+  const detalleEl=document.getElementById('cumpl-detalle');
+  detalleEl.innerHTML=stats.map((s,i)=>{
+    const col=colorPct(s.pct);
+    const pdvRows=s.pdvs.map(pdv=>{
+      const vis=fueVisitado(s.relev,pdv);
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 16px;border-bottom:1px solid var(--brd);font-size:12px;">'+
+        '<span style="color:var(--tx2);">'+pdv+'</span>'+
+        '<span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;background:'+(vis?'rgba(39,174,96,0.15)':'rgba(192,57,43,0.12)')+';color:'+(vis?'#27ae60':'var(--rd)')+';">'+(vis?'✓ Visitado':'✗ Pendiente')+'</span>'+
+      '</div>';
+    }).join('');
+
+    return '<div style="border:1px solid var(--brd);border-radius:8px;margin-bottom:8px;overflow:hidden;">'+
+      '<div onclick="toggleDetalle(\'det-'+i+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);cursor:pointer;">'+
+        '<div style="display:flex;align-items:center;gap:10px;">'+
+          '<span style="font-size:13px;font-weight:600;color:var(--tx);">★ '+s.relev+'</span>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:16px;font-size:12px;font-family:var(--mono);">'+
+          '<span style="color:var(--tx2);">'+s.pdvs.length+' asig.</span>'+
+          '<span style="color:#27ae60;">'+s.cargados+' carg.</span>'+
+          '<span style="color:var(--rd);">'+s.pendientes+' pend.</span>'+
+          '<span style="color:'+col+';font-weight:700;">'+s.pct+'%</span>'+
+          '<span style="color:var(--tx3);font-size:11px;" id="arr-'+i+'">▼</span>'+
+        '</div>'+
+      '</div>'+
+      '<div id="det-'+i+'" style="display:none;">'+pdvRows+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function toggleDetalle(id){
+  const el=document.getElementById(id);
+  const idx=id.replace('det-','');
+  const arr=document.getElementById('arr-'+idx);
+  if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(arr) arr.textContent=open?'▼':'▲';
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='cumplimiento') renderCumplimiento();
+}
 function toggleTheme(){const b=document.body;const isL=b.dataset.theme==='light';b.dataset.theme=isL?'dark':'light';document.getElementById('theme-icon').textContent=isL?'☀️':'🌙';}
 
 /* ── GRÁFICOS ── */
@@ -777,8 +970,8 @@ function hideLoader(){
   setTimeout(hideLoader, 5200);
 })();
 
-document.getElementById('fecha-desde').addEventListener('change',renderAll);
-document.getElementById('fecha-hasta').addEventListener('change',renderAll);
+document.getElementById('fecha-desde').addEventListener('change',()=>{renderAll();if(document.getElementById('panel-cumplimiento').classList.contains('active'))renderCumplimiento();});
+document.getElementById('fecha-hasta').addEventListener('change',()=>{renderAll();if(document.getElementById('panel-cumplimiento').classList.contains('active'))renderCumplimiento();});
 
 function semanaActual(){
   const hoy=new Date(); hoy.setHours(0,0,0,0);
